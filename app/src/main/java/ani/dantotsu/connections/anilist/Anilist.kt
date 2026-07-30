@@ -246,7 +246,11 @@ object Anilist {
     )
 
     fun loginIntent(context: Context) {
-        val clientID = 35169
+        // Kiwami's own AniList client. Implicit grant (response_type=token) with no
+        // redirect_uri parameter, so AniList sends the token to whatever redirect URL is
+        // registered against this ID — it must be exactly `redantotsu://auth` to match the
+        // intent filter in AndroidManifest.xml. No client secret is involved.
+        val clientID = 47328
         try {
             CustomTabsIntent.Builder().build().launchUrl(
                 context,

@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # The fdroid flavor is the only one that builds without google-services.json,
+      # which is intentionally absent from this repo (see IDENTITY.md).
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build fdroid alpha APKs
+        run: ./gradlew assembleFdroidAlpha
+
+      - name: Stamp version
+        run: |
+          VER=$(grep -E -o 'versionName ".*"' app/build.gradle | sed -e 's/versionName //g' -m 1 | tr -d '"' | head -n 1)
+          SHA=${{ github.sha }}
+          echo "VERSION=${VER}+${SHA:0:7}" >> $GITHUB_ENV
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kiwami-${{ env.VERSION }}
+          retention-days: 7
+          compression-level: 9
+          # Matches the custom outputFileName in app/build.gradle; one APK per ABI
+          # split plus the universal one.
+          path: app/build/outputs/apk/fdroid/alpha/Kiwami-*-alpha.apk

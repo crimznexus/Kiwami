@@ -56,6 +56,36 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
+/**
+ * Single source of truth for the floating bottom bar's geometry.
+ *
+ * Every host used to size the bar itself — the home pager, a fixed 260dp x 60dp view in
+ * activity_media, 56dp in activity_feed, wrap_content elsewhere — so the bar was a
+ * different size on every screen and the 60dp/56dp hosts clipped it badly enough that the
+ * icons overflowed the capsule. All hosts now defer to these values.
+ */
+object LiquidBottomBarMetrics {
+    /** Height of the capsule itself. */
+    val BarHeight = 64.dp
+
+    /** Gap between the capsule and each screen edge. */
+    val HorizontalInset = 24.dp
+
+    /** Gap between the capsule and the bottom of the content area. */
+    val BottomInset = 32.dp
+
+    /**
+     * Slack around the capsule so the press/drag animation can scale past its bounds
+     * without being clipped. Counts toward the view's total height.
+     */
+    val AnimationPadding = 12.dp
+
+    val IconSize = 24.dp
+
+    /** Total height an XML host must allow the view; use wrap_content rather than hardcoding. */
+    val TotalHeight = BarHeight + AnimationPadding * 2
+}
+
 @Composable
 fun LiquidBottomTabs(
     selectedTabIndex: () -> Int,

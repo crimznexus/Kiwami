@@ -65,15 +65,14 @@ class ProfileActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListene
         val context = this
         screenWidth = resources.displayMetrics.widthPixels.toFloat()
         navBar = binding.profileNavBar
-        val navBarRightMargin = if (resources.configuration.orientation ==
-            Configuration.ORIENTATION_LANDSCAPE
-        ) navBarHeight else 0
-        val navBarBottomMargin = if (resources.configuration.orientation ==
-            Configuration.ORIENTATION_LANDSCAPE
-        ) 0 else navBarHeight
-        navBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            rightMargin = navBarRightMargin
-            bottomMargin = navBarBottomMargin
+        // The bar applies its own bottom inset (including the system nav bar) via
+        // LiquidBottomBarMetrics, so only the landscape side inset is set here. Setting
+        // bottomMargin as well used to double-count it and shift this bar relative to the
+        // one on the home screen.
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            navBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                rightMargin = navBarHeight
+            }
         }
         val feedTab = navBar.createTab(R.drawable.ic_round_filter_24, "Feed")
         val profileTab = navBar.createTab(R.drawable.ic_round_person_24, "Profile")

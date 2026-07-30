@@ -63,7 +63,9 @@ enum class PrefName(val data: Pref) {
     CustomThemeInt(Pref(Location.UI, Int::class, Color.parseColor("#6200EE"))),
     UseSourceTheme(Pref(Location.UI, Boolean::class, false)),
     UseMaterialYou(Pref(Location.UI, Boolean::class, false)),
-    Theme(Pref(Location.UI, String::class, "PURPLE")),
+    // Liquid Glass is Kiwami's signature look, so it is the out-of-box default.
+    // Every `isLiquidGlassTheme` branch in the app keys off this exact string.
+    Theme(Pref(Location.UI, String::class, "LIQUID_GLASS")),
     SkipExtensionIcons(Pref(Location.UI, Boolean::class, false)),
     DarkMode(Pref(Location.UI, Int::class, 0)),
     ShowYtButton(Pref(Location.UI, Boolean::class, true)),
@@ -184,7 +186,6 @@ enum class PrefName(val data: Pref) {
     //Irrelevant
     Incognito(Pref(Location.Irrelevant, Boolean::class, false)),
     OfflineMode(Pref(Location.Irrelevant, Boolean::class, false)),
-    DiscordStatus(Pref(Location.Irrelevant, String::class, "online")),
     ShowAniListIcon(Pref(Location.Irrelevant, Boolean::class, false)),
     DownloadsKeys(Pref(Location.Irrelevant, String::class, "")),
     NovelLastExtCheck(Pref(Location.Irrelevant, Long::class, 0L)),
@@ -214,14 +215,9 @@ enum class PrefName(val data: Pref) {
     DownloadsDir(Pref(Location.Irrelevant, String::class, "")),
     OC(Pref(Location.Irrelevant, Boolean::class, false)),
     RefreshStatus(Pref(Location.Irrelevant, Boolean::class, false)),
-    rpcEnabled(Pref(Location.Irrelevant, Boolean::class, true)),
     IsSupporter(Pref(Location.Irrelevant, Boolean::class, false)),
 
     //Protected
-    DiscordToken(Pref(Location.Protected, String::class, "")),
-    DiscordId(Pref(Location.Protected, String::class, "")),
-    DiscordUserName(Pref(Location.Protected, String::class, "")),
-    DiscordAvatar(Pref(Location.Protected, String::class, "")),
     AnilistToken(Pref(Location.Protected, String::class, "")),
     AnilistUserName(Pref(Location.Protected, String::class, "")),
     AnilistUserId(Pref(Location.Protected, String::class, "")),

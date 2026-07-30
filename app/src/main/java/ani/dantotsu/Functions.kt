@@ -140,6 +140,7 @@ import jp.wasabeef.glide.transformations.BlurTransformation
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ani.dantotsu.widgets.LiquidBottomBarMetrics
 import ani.dantotsu.widgets.LiquidGlassBottomBar
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -280,30 +281,49 @@ fun Activity.setNavigationTheme() {
 }
 
 /**
- * Sets clipToPadding false and sets the combined height of navigation bars as bottom padding.
+ * Bottom clearance a scrolling view needs so its last item is reachable above the
+ * floating bottom bar: system nav inset + the bar's bottom gap + the capsule + its
+ * animation slack. Computed from LiquidBottomBarMetrics instead of measuring the live
+ * ComposeView — calling measure(UNSPECIFIED) on it resolves fillMaxWidth against an
+ * unbounded constraint, collapsing the bar to zero width until its parent re-measures.
+ */
+private fun ViewGroup.bottomBarClearance(): Int {
+    val density = resources.displayMetrics.density
+    val bar = LiquidBottomBarMetrics.BarHeight +
+            LiquidBottomBarMetrics.BottomInset +
+            LiquidBottomBarMetrics.AnimationPadding
+    return navBarHeight + (bar.value * density).toInt()
+}
+
+/**
+ * Sets clipToPadding false and pads the bottom so content clears the floating bottom bar.
  *
  * When nesting multiple scrolling views, only call this method on the inner most scrolling view.
  */
 fun ViewGroup.setBaseline(navBar: LiquidGlassBottomBar?) {
-    navBar?.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
     clipToPadding = false
-    setPadding(paddingLeft, paddingTop, paddingRight, navBarHeight + (navBar?.measuredHeight ?: 0))
+    setPadding(
+        paddingLeft,
+        paddingTop,
+        paddingRight,
+        if (navBar != null) bottomBarClearance() else navBarHeight
+    )
 }
 
 /**
- * Sets clipToPadding false and sets the combined height of navigation bars as bottom padding.
+ * Sets clipToPadding false and pads the bottom so content clears the floating bottom bar
+ * plus an overlay view stacked above it.
  *
  * When nesting multiple scrolling views, only call this method on the inner most scrolling view.
  */
 fun ViewGroup.setBaseline(navBar: LiquidGlassBottomBar?, overlayView: View) {
-    navBar?.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
     overlayView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
     clipToPadding = false
     setPadding(
         paddingLeft,
         paddingTop,
         paddingRight,
-        navBarHeight + (navBar?.measuredHeight ?: 0) + overlayView.measuredHeight
+        (if (navBar != null) bottomBarClearance() else navBarHeight) + overlayView.measuredHeight
     )
 }
 

@@ -11,6 +11,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,9 +37,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import ani.dantotsu.navBarHeight
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.themes.liquidglass.TabItem
@@ -94,7 +97,8 @@ class LiquidGlassWrapper @JvmOverloads constructor(
     private fun LiquidGlassContent() {
         val backdrop = rememberLayerBackdrop()
         val coroutineScope = rememberCoroutineScope()
-        
+        val navInset = with(LocalDensity.current) { navBarHeight.toDp() }
+
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
@@ -120,8 +124,12 @@ class LiquidGlassWrapper @JvmOverloads constructor(
                     tabsCount = tabs.size.coerceAtLeast(1),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
-                        .padding(12.dp)
+                        .padding(
+                            bottom = LiquidBottomBarMetrics.BottomInset + navInset,
+                            start = LiquidBottomBarMetrics.HorizontalInset,
+                            end = LiquidBottomBarMetrics.HorizontalInset
+                        )
+                        .padding(LiquidBottomBarMetrics.AnimationPadding)
                 ) {
                     tabs.forEachIndexed { index, tab ->
                         LiquidBottomTab(onClick = {
@@ -131,9 +139,9 @@ class LiquidGlassWrapper @JvmOverloads constructor(
                         }) {
                             Icon(
                                 painter = painterResource(id = tab.iconRes),
-                                contentDescription = tab.title
+                                contentDescription = tab.title,
+                                modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
                             )
-                            Text(tab.title)
                         }
                     }
                 }
@@ -144,6 +152,7 @@ class LiquidGlassWrapper @JvmOverloads constructor(
     @Composable
     private fun StandardContent() {
         val isDark = isSystemInDarkTheme()
+        val navInset = with(LocalDensity.current) { navBarHeight.toDp() }
         // Semi-transparent pill-shaped background (same as home navbar)
         val bgColor = if (isDark) Color(0xD9121212) else Color(0xD9F5F5F7)
         val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.05f)
@@ -162,26 +171,30 @@ class LiquidGlassWrapper @JvmOverloads constructor(
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
+                    .padding(
+                        start = LiquidBottomBarMetrics.HorizontalInset,
+                        end = LiquidBottomBarMetrics.HorizontalInset,
+                        top = LiquidBottomBarMetrics.AnimationPadding,
+                        bottom = LiquidBottomBarMetrics.BottomInset + navInset
+                    )
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .height(LiquidBottomBarMetrics.BarHeight)
                     .shadow(8.dp, shape)
                     .clip(shape)
                     .background(bgColor)
                     .border(1.dp, borderColor, shape),
-                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 tabs.forEachIndexed { index, tab ->
                     IconButton(
                         onClick = { handleTabSelection(index) },
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     ) {
                         Icon(
                             painter = painterResource(id = tab.iconRes),
                             contentDescription = tab.title,
                             tint = if (index == selectedIndex) activeColor else inactiveColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
                         )
                     }
                 }
@@ -275,7 +288,8 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
         // Use rememberLayerBackdrop directly (it's already a remembered composable)
         val backdrop = rememberLayerBackdrop()
         val coroutineScope = rememberCoroutineScope()
-        
+        val navInset = with(LocalDensity.current) { navBarHeight.toDp() }
+
         Box(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
@@ -294,7 +308,12 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
                 tabsCount = tabs.size.coerceAtLeast(1),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(12.dp)
+                    .padding(
+                        bottom = LiquidBottomBarMetrics.BottomInset + navInset,
+                        start = LiquidBottomBarMetrics.HorizontalInset,
+                        end = LiquidBottomBarMetrics.HorizontalInset
+                    )
+                    .padding(LiquidBottomBarMetrics.AnimationPadding)
             ) {
                 tabs.forEachIndexed { index, tab ->
                     LiquidBottomTab(onClick = {
@@ -304,9 +323,9 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
                     }) {
                         Icon(
                             painter = painterResource(id = tab.iconRes),
-                            contentDescription = tab.title
+                            contentDescription = tab.title,
+                            modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
                         )
-                        Text(tab.title)
                     }
                 }
             }
@@ -316,6 +335,7 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
     @Composable
     private fun StandardContent() {
         val isDark = isSystemInDarkTheme()
+        val navInset = with(LocalDensity.current) { navBarHeight.toDp() }
         // Semi-transparent pill-shaped background (same as home navbar)
         val bgColor = if (isDark) Color(0xD9121212) else Color(0xD9F5F5F7)
         val borderColor = if (isDark) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.05f)
@@ -326,30 +346,34 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(
+                    start = LiquidBottomBarMetrics.HorizontalInset,
+                    end = LiquidBottomBarMetrics.HorizontalInset,
+                    top = LiquidBottomBarMetrics.AnimationPadding,
+                    bottom = LiquidBottomBarMetrics.BottomInset + navInset
+                ),
             contentAlignment = Alignment.BottomCenter
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .height(LiquidBottomBarMetrics.BarHeight)
                     .shadow(8.dp, shape)
                     .clip(shape)
                     .background(bgColor)
                     .border(1.dp, borderColor, shape),
-                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 tabs.forEachIndexed { index, tab ->
                     IconButton(
                         onClick = { selectTabAtInternal(index) },
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.weight(1f).fillMaxHeight()
                     ) {
                         Icon(
                             painter = painterResource(id = tab.iconRes),
                             contentDescription = tab.title,
                             tint = if (index == selectedIndex) activeColor else inactiveColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
                         )
                     }
                 }

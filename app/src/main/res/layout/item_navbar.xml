@@ -1,38 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Same LiquidGlassBottomBar widget as every other screen, so the home bar is pixel-
+     identical to the media/profile/feed bars. The old Material BottomNavigationView
+     could not center its icons: it budgets label space even in unlabeled mode, leaving
+     the icons ~12dp above the capsule's centre. The widget draws its own pill and
+     applies its own insets via LiquidBottomBarMetrics, so this file declares no
+     padding, background, or fixed height. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navbar_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom|center_horizontal"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:paddingStart="24dp"
-    android:paddingEnd="24dp"
-    android:paddingBottom="16dp"
     android:visibility="gone">
 
-    <!-- Simple pill-shaped container without blur -->
-    <FrameLayout
-        android:id="@+id/blurView"
+    <ani.dantotsu.widgets.LiquidGlassBottomBar
+        android:id="@+id/navbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:background="@drawable/pill_background"
-        android:elevation="8dp">
-
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/navbar"
-            android:layout_width="match_parent"
-            android:layout_height="60dp"
-            android:layout_gravity="center"
-            android:background="@android:color/transparent"
-            app:menu="@menu/bottom_navbar_menu"
-            app:labelVisibilityMode="unlabeled"
-            app:itemIconTint="@color/tab_layout_icon"
-            app:itemTextColor="@color/tab_layout_icon"
-            app:itemActiveIndicatorStyle="@null" />
-
-    </FrameLayout>
+        android:layout_gravity="center_horizontal|bottom" />
 </FrameLayout>

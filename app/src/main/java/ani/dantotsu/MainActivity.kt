@@ -78,6 +78,8 @@ import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -91,6 +93,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ani.dantotsu.widgets.LiquidBottomTabs
 import ani.dantotsu.widgets.LiquidBottomTab
+import ani.dantotsu.widgets.LiquidBottomBarMetrics
+import ani.dantotsu.widgets.LiquidGlassBottomBar
 import ani.dantotsu.widgets.GlassSettingsOverlay
 import ani.dantotsu.widgets.GlassSettingsController
 import com.kyant.backdrop.Backdrop
@@ -296,6 +300,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     val coroutineScope = rememberCoroutineScope()
                     val backdrop = rememberLayerBackdrop() // Shared backdrop for glass effect
+                    val navInset = with(LocalDensity.current) { navBarHeight.toDp() }
 
                     // Sync pager state to global selectedOption when page changes
                     LaunchedEffect(pagerState.currentPage) {
@@ -341,16 +346,23 @@ class MainActivity : AppCompatActivity() {
                             tabsCount = 3,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
-                                .padding(12.dp) // Internal padding for animation clipping
+                                .padding(
+                                    bottom = LiquidBottomBarMetrics.BottomInset + navInset,
+                                    start = LiquidBottomBarMetrics.HorizontalInset,
+                                    end = LiquidBottomBarMetrics.HorizontalInset
+                                )
+                                .padding(LiquidBottomBarMetrics.AnimationPadding)
                         ) {
                             LiquidBottomTab(onClick = {
                                 selectedIndex = 0
                                 selectedOption = 0
                                 coroutineScope.launch { pagerState.scrollToPage(0) }
                             }) {
-                                Icon(painterResource(R.drawable.ic_round_movie_filter_24), contentDescription = stringResource(R.string.anime))
-                                Text(stringResource(R.string.anime))
+                                Icon(
+                                    painterResource(R.drawable.ic_round_movie_filter_24),
+                                    contentDescription = stringResource(R.string.anime),
+                                    modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                                )
                             }
 
                             LiquidBottomTab(onClick = {
@@ -358,8 +370,11 @@ class MainActivity : AppCompatActivity() {
                                 selectedOption = 1
                                 coroutineScope.launch { pagerState.scrollToPage(1) }
                             }) {
-                                Icon(painterResource(R.drawable.ic_round_home_24), contentDescription = stringResource(R.string.home))
-                                Text(stringResource(R.string.home))
+                                Icon(
+                                    painterResource(R.drawable.ic_round_home_24),
+                                    contentDescription = stringResource(R.string.home),
+                                    modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                                )
                             }
 
                             LiquidBottomTab(onClick = {
@@ -367,8 +382,11 @@ class MainActivity : AppCompatActivity() {
                                 selectedOption = 2
                                 coroutineScope.launch { pagerState.scrollToPage(2) }
                             }) {
-                                Icon(painterResource(R.drawable.ic_round_import_contacts_24), contentDescription = stringResource(R.string.manga))
-                                Text(stringResource(R.string.manga))
+                                Icon(
+                                    painterResource(R.drawable.ic_round_import_contacts_24),
+                                    contentDescription = stringResource(R.string.manga),
+                                    modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                                )
                             }
                         }
 
@@ -398,46 +416,31 @@ class MainActivity : AppCompatActivity() {
                 mainViewPager.adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)
                 mainViewPager.setPageTransformer(ZoomOutPageTransformer())
 
-                navbar.setOnItemSelectedListener { item ->
-                    when (item.itemId) {
-                        R.id.anime -> {
-                            selectedOption = 0
-                            mainViewPager.setCurrentItem(0, false)
-                            true
-                        }
-                        R.id.home -> {
-                            selectedOption = 1
-                            mainViewPager.setCurrentItem(1, false)
-                            true
-                        }
-                        R.id.manga -> {
-                            selectedOption = 2
-                            mainViewPager.setCurrentItem(2, false)
-                            true
-                        }
-                        else -> false
+                navbar.clearTabs()
+                navbar.addTab(navbar.createTab(R.drawable.ic_round_movie_filter_24, R.string.anime))
+                navbar.addTab(navbar.createTab(R.drawable.ic_round_home_24, R.string.home))
+                navbar.addTab(navbar.createTab(R.drawable.ic_round_import_contacts_24, R.string.manga))
+                navbar.setOnTabSelectListener(object : LiquidGlassBottomBar.OnTabSelectListener {
+                    override fun onTabSelected(
+                        oldIndex: Int,
+                        oldTab: LiquidGlassBottomBar.Tab?,
+                        newIndex: Int,
+                        newTab: LiquidGlassBottomBar.Tab
+                    ) {
+                        selectedOption = newIndex
+                        mainViewPager.setCurrentItem(newIndex, false)
                     }
-                }
+                })
+                navbar.selectTabAt(selectedOption)
 
                 if (mainViewPager.currentItem != selectedOption) {
                     mainViewPager.post {
-                        mainViewPager.setCurrentItem(
-                            selectedOption,
-                            false
-                        )
-                        // Update navbar selection
-                        navbar.selectedItemId = when(selectedOption) {
-                            0 -> R.id.anime
-                            1 -> R.id.home
-                            2 -> R.id.manga
-                            else -> R.id.home
-                        }
+                        mainViewPager.setCurrentItem(selectedOption, false)
                     }
                 }
             }
-            binding.includedNavbar.navbarContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                bottomMargin = navBarHeight
-            }
+            // No margin adjustment here: the bar applies its own bottom inset (including
+            // the system nav bar) via LiquidBottomBarMetrics.
         }
 
         var launched = false
@@ -526,7 +529,7 @@ class MainActivity : AppCompatActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     if (!(PrefManager.getVal(PrefName.AllowOpeningLinks) as Boolean)) {
                         CustomBottomDialog.newInstance().apply {
-                            title = "Allow ReDantotsu to automatically open Anilist & MAL Links?"
+                            title = "Allow Kiwami to automatically open Anilist & MAL Links?"
                             val md = "Open settings & click +Add Links & select Anilist & Mal urls"
                             addView(TextView(this@MainActivity).apply {
                                 val markWon =
@@ -585,13 +588,8 @@ class MainActivity : AppCompatActivity() {
         window.navigationBarColor = ContextCompat.getColor(this, android.R.color.transparent)
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        val margin = if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) 8 else 32
-        val params: ViewGroup.MarginLayoutParams =
-            binding.includedNavbar.navbarContainer.layoutParams as ViewGroup.MarginLayoutParams
-        params.updateMargins(bottom = margin.toPx)
-    }
+    // No onConfigurationChanged margin juggling: the bottom bar owns its insets via
+    // LiquidBottomBarMetrics, identically in both orientations.
 
     private fun handleViewIntent(intent: Intent) {
         val uri: Uri? = intent.data

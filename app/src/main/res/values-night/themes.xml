@@ -297,6 +297,53 @@
         <item name="colorPrimaryInverse">@color/bg_black</item>
     </style>
 
+    <!-- Dark-mode Liquid Glass. Every other theme has a night override; without this one
+         the light glass palette from values/ leaked into dark mode, putting the app's
+         night-resource text (white) on frosted-white surfaces. Mirrors the light variant's
+         structure with a dark frosted palette; the OLED variant in values/ stays true
+         black and is selected separately via UseOLED. -->
+    <style name="Theme.Dantotsu.LiquidGlass" parent="Theme.Base">
+        <!-- Primary - ice-blue glass on dark -->
+        <item name="colorPrimary">#8090CAF9</item>
+        <item name="colorOnPrimary">#0D1B3E</item>
+        <item name="colorPrimaryContainer">#B31A237E</item>
+        <item name="colorOnPrimaryContainer">#BBDEFB</item>
+
+        <!-- Secondary - dark glass gray -->
+        <item name="colorSecondary">#80546E7A</item>
+        <item name="colorOnSecondary">#ECEFF1</item>
+        <item name="colorSecondaryContainer">#B3455A64</item>
+        <item name="colorOnSecondaryContainer">#CFD8DC</item>
+
+        <!-- Tertiary - dark glass accent -->
+        <item name="colorTertiary">#804FC3F7</item>
+        <item name="colorOnTertiary">#01344D</item>
+        <item name="colorTertiaryContainer">#B30277BD</item>
+        <item name="colorOnTertiaryContainer">#81D4FA</item>
+
+        <!-- Error colors -->
+        <item name="colorError">#B3EF9A9A</item>
+        <item name="colorErrorContainer">#B3B71C1C</item>
+        <item name="colorOnError">#4E0002</item>
+        <item name="colorOnErrorContainer">#FFCDD2</item>
+
+        <!-- Background - dark frosted -->
+        <item name="android:colorBackground">#F0121212</item>
+        <item name="colorOnBackground">#EEEEEE</item>
+
+        <!-- Surface - dark glass translucent -->
+        <item name="colorSurface">#E61E1E1E</item>
+        <item name="colorOnSurface">#E0E0E0</item>
+        <item name="colorSurfaceVariant">#D9263238</item>
+        <item name="colorOnSurfaceVariant">#B0BEC5</item>
+
+        <!-- Outline - subtle glass edge -->
+        <item name="colorOutline">#4090CAF9</item>
+        <item name="colorOnSurfaceInverse">#212121</item>
+        <item name="colorSurfaceInverse">#E0E0E0</item>
+        <item name="colorPrimaryInverse">#1A237E</item>
+    </style>
+
     <style name="Theme.Dantotsu.BlueOLED" parent="Theme.Dantotsu.Blue">
         <item name="android:colorBackground">@color/darkest_Black</item>
         <item name="colorSurface">@color/darkest_Black</item>

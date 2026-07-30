@@ -31,6 +31,10 @@ import ani.dantotsu.snackString
 import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.widgets.LiquidBottomTabs
 import ani.dantotsu.widgets.LiquidBottomTab
+import ani.dantotsu.widgets.LiquidBottomBarMetrics
+import ani.dantotsu.widgets.LiquidGlassBottomBar
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -88,9 +92,6 @@ class NoInternet : AppCompatActivity() {
             initActivity(this)
             selectedOption = PrefManager.getVal(PrefName.DefaultStartUpTab)
 
-            binding.includedNavbar.navbarContainer.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                bottomMargin = navBarHeight
-            }
         }
 
         // Check if Liquid Glass theme is active
@@ -133,6 +134,7 @@ class NoInternet : AppCompatActivity() {
                         }
                     }
                     
+                    val navInset = with(LocalDensity.current) { navBarHeight.toDp() }
                     LiquidBottomTabs(
                         selectedTabIndex = { selectedOption },
                         onTabSelected = { index ->
@@ -143,31 +145,44 @@ class NoInternet : AppCompatActivity() {
                         tabsCount = 3,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 32.dp, start = 24.dp, end = 24.dp)
-                            .padding(12.dp)
+                            .padding(
+                                bottom = LiquidBottomBarMetrics.BottomInset + navInset,
+                                start = LiquidBottomBarMetrics.HorizontalInset,
+                                end = LiquidBottomBarMetrics.HorizontalInset
+                            )
+                            .padding(LiquidBottomBarMetrics.AnimationPadding)
                     ) {
                         LiquidBottomTab(onClick = {
                             selectedOption = 0
                             coroutineScope.launch { pagerState.scrollToPage(0) }
                         }) {
-                            Icon(painterResource(R.drawable.ic_round_movie_filter_24), contentDescription = stringResource(R.string.anime))
-                            Text(stringResource(R.string.anime))
+                            Icon(
+                                painterResource(R.drawable.ic_round_movie_filter_24),
+                                contentDescription = stringResource(R.string.anime),
+                                modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                            )
                         }
 
                         LiquidBottomTab(onClick = {
                             selectedOption = 1
                             coroutineScope.launch { pagerState.scrollToPage(1) }
                         }) {
-                            Icon(painterResource(R.drawable.ic_round_home_24), contentDescription = stringResource(R.string.home))
-                            Text(stringResource(R.string.home))
+                            Icon(
+                                painterResource(R.drawable.ic_round_home_24),
+                                contentDescription = stringResource(R.string.home),
+                                modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                            )
                         }
 
                         LiquidBottomTab(onClick = {
                             selectedOption = 2
                             coroutineScope.launch { pagerState.scrollToPage(2) }
                         }) {
-                            Icon(painterResource(R.drawable.ic_round_import_contacts_24), contentDescription = stringResource(R.string.manga))
-                            Text(stringResource(R.string.manga))
+                            Icon(
+                                painterResource(R.drawable.ic_round_import_contacts_24),
+                                contentDescription = stringResource(R.string.manga),
+                                modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                            )
                         }
                     }
                 }
@@ -185,36 +200,26 @@ class NoInternet : AppCompatActivity() {
             mainViewPager.adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)
             mainViewPager.setPageTransformer(ZoomOutPageTransformer())
 
-            navbar.setOnItemSelectedListener { item ->
-               when (item.itemId) {
-                    R.id.anime -> {
-                        selectedOption = 0
-                        mainViewPager.setCurrentItem(0, false)
-                        true
-                    }
-                    R.id.home -> {
-                        selectedOption = 1
-                        mainViewPager.setCurrentItem(1, false)
-                        true
-                    }
-                    R.id.manga -> {
-                        selectedOption = 2
-                        mainViewPager.setCurrentItem(2, false)
-                        true
-                    }
-                    else -> false
+            navbar.clearTabs()
+            navbar.addTab(navbar.createTab(R.drawable.ic_round_movie_filter_24, R.string.anime))
+            navbar.addTab(navbar.createTab(R.drawable.ic_round_home_24, R.string.home))
+            navbar.addTab(navbar.createTab(R.drawable.ic_round_import_contacts_24, R.string.manga))
+            navbar.setOnTabSelectListener(object : LiquidGlassBottomBar.OnTabSelectListener {
+                override fun onTabSelected(
+                    oldIndex: Int,
+                    oldTab: LiquidGlassBottomBar.Tab?,
+                    newIndex: Int,
+                    newTab: LiquidGlassBottomBar.Tab
+                ) {
+                    selectedOption = newIndex
+                    mainViewPager.setCurrentItem(newIndex, false)
                 }
-            }
+            })
+            navbar.selectTabAt(selectedOption)
 
             if (mainViewPager.currentItem != selectedOption) {
                 mainViewPager.post {
                     mainViewPager.setCurrentItem(selectedOption, false)
-                    navbar.selectedItemId = when(selectedOption) {
-                        0 -> R.id.anime
-                        1 -> R.id.home
-                        2 -> R.id.manga
-                        else -> R.id.home
-                    }
                 }
             }
         }

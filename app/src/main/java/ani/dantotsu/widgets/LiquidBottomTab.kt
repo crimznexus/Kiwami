@@ -42,7 +42,11 @@ fun RowScope.LiquidBottomTab(
                 scaleX = scale
                 scaleY = scale
             },
-        verticalArrangement = Arrangement.spacedBy(2f.dp, Alignment.CenterVertically),
+        // Tabs are icon-only (matching labelVisibilityMode="unlabeled" on the non-glass
+        // navbar), so the icon is the only child and centres exactly. When a label was
+        // also emitted here, the Column centred the icon+label pair and left the icon
+        // sitting ~12dp above the capsule's centre on every screen.
+        verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
         content = content
     )

@@ -273,14 +273,16 @@ class SettingsDialogFragment : BottomSheetDialogFragment() {
     }
 
     companion object {
-        // Glass has to stay readable over whatever the home screen happens to be showing —
-        // cover art, bright banners, dense text. Anything much below these values lets that
-        // content read straight through the menu instead of sitting behind it.
-        private const val BLUR_RADIUS = 64
-        private const val DIM_WITH_BLUR = 0.4f
+        // Two different jobs. When the system grants a blur, a heavy radius destroys the
+        // detail behind the sheet, so the fill can stay genuinely translucent and still read
+        // as frosted glass rather than as the home screen. When it does not, opacity is the
+        // only thing keeping the menu legible, so the panel closes up and the dim goes
+        // darker — an unblurred translucent panel is what made this look like overlap.
+        private const val BLUR_RADIUS = 110             // px
+        private const val DIM_WITH_BLUR = 0.32f
         private const val DIM_WITHOUT_BLUR = 0.55f
-        private const val FILL_ALPHA_WITH_BLUR = 246    // 96%
-        private const val FILL_ALPHA_WITHOUT_BLUR = 252 // 99%
+        private const val FILL_ALPHA_WITH_BLUR = 196    // 77%
+        private const val FILL_ALPHA_WITHOUT_BLUR = 248 // 97%
 
         enum class PageType {
             MANGA, ANIME, HOME, OfflineMANGA, OfflineANIME, OfflineHOME

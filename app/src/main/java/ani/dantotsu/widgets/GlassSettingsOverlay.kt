@@ -68,13 +68,18 @@ fun GlassSettingsOverlay(
     val isLightTheme = !isSystemInDarkTheme()
     val contentColor = if (isLightTheme) Color.Black else Color.White
     val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF0091FF)
-    // The panel sits over whatever the home screen is showing — cover art, banners, dense
-    // text. At the 0.4 alpha this used to run at, all of that read straight through and the
-    // menu looked like it was overlapping the content rather than sitting above it.
+    // Deliberately translucent so the panel still reads as glass. What makes that safe is
+    // the blur below: this samples the real backdrop, so a large radius genuinely destroys
+    // the detail behind rather than merely tinting it. Raising alpha instead would kill the
+    // effect, and lowering it without the heavy blur is what made the menu look like it was
+    // overlapping the home screen.
     val containerColor =
-        if (isLightTheme) Color(0xFFFAFAFA).copy(0.94f) else Color(0xFF121212).copy(0.92f)
-    // Scrim behind the panel, so the backdrop recedes instead of competing with the menu.
-    val dimColor = Color.Black.copy(if (isLightTheme) 0.32f else 0.45f)
+        if (isLightTheme) Color(0xFFFAFAFA).copy(0.80f) else Color(0xFF121212).copy(0.72f)
+    // The backdrop this panel blurs only covers the Compose layer, so the home screen's own
+    // views (cover art, titles, progress counts) come through the fill unblurred. The scrim
+    // is what suppresses them: together with the fill it leaves roughly a tenth of the
+    // original brightness, enough for colour and depth but not enough to read.
+    val dimColor = Color.Black.copy(if (isLightTheme) 0.50f else 0.62f)
     
     val context = LocalContext.current
     var isIncognito by remember { mutableStateOf(PrefManager.getVal<Boolean>(PrefName.Incognito)) }
@@ -139,9 +144,10 @@ fun GlassSettingsOverlay(
                                 brightness = if (isLightTheme) 0.2f else 0f,
                                 saturation = 1.3f // Slightly reduced
                             )
-                            // Enough blur that whatever survives the panel fill reads as
-                            // texture behind glass rather than as legible content.
-                            blur(if (isLightTheme) 20.dp.toPx() else 24.dp.toPx())
+                            // Heavy on purpose: at the previous 5-8dp, cover art and list
+                            // titles behind the sheet stayed legible through the fill. This
+                            // has to smear them into texture for the glass to work.
+                            blur(if (isLightTheme) 40.dp.toPx() else 48.dp.toPx())
                             lens(16.dp.toPx(), 32.dp.toPx(), depthEffect = true)
                         },
                         highlight = { Highlight.Plain },

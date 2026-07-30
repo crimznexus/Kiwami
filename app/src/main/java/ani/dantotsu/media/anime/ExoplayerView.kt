@@ -33,8 +33,17 @@ import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.KeyEvent.ACTION_UP
 import android.view.KeyEvent.KEYCODE_B
+import android.view.KeyEvent.KEYCODE_DPAD_CENTER
 import android.view.KeyEvent.KEYCODE_DPAD_LEFT
 import android.view.KeyEvent.KEYCODE_DPAD_RIGHT
+import android.view.KeyEvent.KEYCODE_ENTER
+import android.view.KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+import android.view.KeyEvent.KEYCODE_MEDIA_NEXT
+import android.view.KeyEvent.KEYCODE_MEDIA_PAUSE
+import android.view.KeyEvent.KEYCODE_MEDIA_PLAY
+import android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+import android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS
+import android.view.KeyEvent.KEYCODE_MEDIA_REWIND
 import android.view.KeyEvent.KEYCODE_N
 import android.view.KeyEvent.KEYCODE_SPACE
 import android.view.MotionEvent
@@ -938,6 +947,8 @@ class ExoplayerView :
 
         keyMap[KEYCODE_DPAD_RIGHT] = { seek(true) }
         keyMap[KEYCODE_DPAD_LEFT] = { seek(false) }
+        keyMap[KEYCODE_MEDIA_FAST_FORWARD] = { seek(true) }
+        keyMap[KEYCODE_MEDIA_REWIND] = { seek(false) }
 
         // Screen Gestures
         if (PrefManager.getVal<Boolean>(PrefName.Gestures) || PrefManager.getVal<Boolean>(PrefName.DoubleTap)) {
@@ -2509,16 +2520,43 @@ class ExoplayerView :
             KEYCODE_SPACE to { exoPlay.performClick() },
             KEYCODE_N to { exoNext.performClick() },
             KEYCODE_B to { exoPrev.performClick() },
+            // A TV remote has no keyboard: OK is how you pause, and the transport keys are
+            // what a remote or Bluetooth handset actually sends.
+            KEYCODE_MEDIA_PLAY_PAUSE to { exoPlay.performClick() },
+            KEYCODE_MEDIA_PLAY to { exoPlay.performClick() },
+            KEYCODE_MEDIA_PAUSE to { exoPlay.performClick() },
+            KEYCODE_MEDIA_NEXT to { exoNext.performClick() },
+            KEYCODE_MEDIA_PREVIOUS to { exoPrev.performClick() },
+            // Bound alongside the D-pad seek handlers, where seek() is in scope.
+            KEYCODE_MEDIA_FAST_FORWARD to null,
+            KEYCODE_MEDIA_REWIND to null,
         )
 
-    override fun dispatchKeyEvent(event: KeyEvent): Boolean =
-        if (keyMap.containsKey(event.keyCode)) {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // While the controls are on screen the D-pad belongs to them, so the remote can move
+        // between the transport buttons instead of scrubbing behind an overlay it looks like
+        // it should be driving. Seek/confirm shortcuts only apply once they are hidden.
+        val controlsShowing = playerView.isControllerFullyVisible
+        if (controlsShowing &&
+            (event.keyCode == KEYCODE_DPAD_LEFT || event.keyCode == KEYCODE_DPAD_RIGHT ||
+                    event.keyCode == KEYCODE_DPAD_CENTER || event.keyCode == KEYCODE_ENTER)
+        ) return super.dispatchKeyEvent(event)
+
+        // OK with the controls hidden is the remote's play/pause, matching how every other
+        // TV player behaves.
+        if (event.keyCode == KEYCODE_DPAD_CENTER || event.keyCode == KEYCODE_ENTER) {
+            if (event.action == ACTION_UP && isInitialized) exoPlay.performClick()
+            return true
+        }
+
+        return if (keyMap.containsKey(event.keyCode)) {
             (event.action == ACTION_UP).also {
                 if (isInitialized && it) keyMap[event.keyCode]?.invoke()
             }
         } else {
             super.dispatchKeyEvent(event)
         }
+    }
 
     private fun startCastPlayer() {
         if (!isCastApiAvailable) {

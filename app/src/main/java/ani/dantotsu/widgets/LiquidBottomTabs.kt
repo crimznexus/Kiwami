@@ -82,6 +82,13 @@ object LiquidBottomBarMetrics {
 
     val IconSize = 24.dp
 
+    /**
+     * Ceiling on the capsule's width. Stretching edge to edge suits a phone, but on a TV or
+     * tablet it becomes a metre-wide bar with the three icons marooned far apart; capping it
+     * keeps the capsule reading as one control.
+     */
+    val MaxBarWidth = 560.dp
+
     /** Total height an XML host must allow the view; use wrap_content rather than hardcoding. */
     val TotalHeight = BarHeight + AnimationPadding * 2
 }

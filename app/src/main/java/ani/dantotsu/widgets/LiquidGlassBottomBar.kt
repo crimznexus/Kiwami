@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -130,6 +131,7 @@ class LiquidGlassWrapper @JvmOverloads constructor(
                             end = LiquidBottomBarMetrics.HorizontalInset
                         )
                         .padding(LiquidBottomBarMetrics.AnimationPadding)
+                        .widthIn(max = LiquidBottomBarMetrics.MaxBarWidth)
                 ) {
                     tabs.forEachIndexed { index, tab ->
                         LiquidBottomTab(onClick = {
@@ -177,6 +179,9 @@ class LiquidGlassWrapper @JvmOverloads constructor(
                         top = LiquidBottomBarMetrics.AnimationPadding,
                         bottom = LiquidBottomBarMetrics.BottomInset + navInset
                     )
+                    // widthIn has to come first: fillMaxWidth pins the width to the parent's
+                    // maximum, and a later cap cannot shrink an already-fixed width.
+                    .widthIn(max = LiquidBottomBarMetrics.MaxBarWidth)
                     .fillMaxWidth()
                     .height(LiquidBottomBarMetrics.BarHeight)
                     .shadow(8.dp, shape)
@@ -314,6 +319,7 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
                         end = LiquidBottomBarMetrics.HorizontalInset
                     )
                     .padding(LiquidBottomBarMetrics.AnimationPadding)
+                        .widthIn(max = LiquidBottomBarMetrics.MaxBarWidth)
             ) {
                 tabs.forEachIndexed { index, tab ->
                     LiquidBottomTab(onClick = {
@@ -356,6 +362,9 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
         ) {
             Row(
                 modifier = Modifier
+                    // widthIn has to come first: fillMaxWidth pins the width to the parent's
+                    // maximum, and a later cap cannot shrink an already-fixed width.
+                    .widthIn(max = LiquidBottomBarMetrics.MaxBarWidth)
                     .fillMaxWidth()
                     .height(LiquidBottomBarMetrics.BarHeight)
                     .shadow(8.dp, shape)

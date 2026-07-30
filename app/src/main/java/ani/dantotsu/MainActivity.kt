@@ -87,6 +87,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -352,6 +353,9 @@ class MainActivity : AppCompatActivity() {
                                     end = LiquidBottomBarMetrics.HorizontalInset
                                 )
                                 .padding(LiquidBottomBarMetrics.AnimationPadding)
+                                // Without this the capsule spans a 1080p TV end to end and
+                                // the three icons end up a third of a screen apart.
+                                .widthIn(max = LiquidBottomBarMetrics.MaxBarWidth)
                         ) {
                             LiquidBottomTab(onClick = {
                                 selectedIndex = 0

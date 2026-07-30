@@ -31,6 +31,7 @@ import ani.dantotsu.databinding.ItemMediaPageSmallBinding
 import ani.dantotsu.loadImage
 import ani.dantotsu.setAnimation
 import ani.dantotsu.setSafeOnClickListener
+import ani.dantotsu.util.TvUtils.tvFocusable
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import com.flaviofaria.kenburnsview.RandomTransitionGenerator
@@ -354,6 +355,7 @@ class MediaAdaptor(
                 )
             }
             itemView.setOnLongClickListener { longClicked(bindingAdapterPosition) }
+            itemView.tvFocusable()
         }
     }
 
@@ -368,6 +370,7 @@ class MediaAdaptor(
                 )
             }
             itemView.setOnLongClickListener { longClicked(bindingAdapterPosition) }
+            itemView.tvFocusable()
         }
     }
 
@@ -384,6 +387,7 @@ class MediaAdaptor(
             }
             itemView.setOnTouchListener { _, _ -> true }
             binding.itemCompactImage.setOnLongClickListener { longClicked(bindingAdapterPosition) }
+            binding.itemCompactImage.tvFocusable()
         }
     }
 
@@ -407,6 +411,7 @@ class MediaAdaptor(
             }
             itemView.setOnTouchListener { _, _ -> true }
             binding.itemCompactImage.setOnLongClickListener { longClicked(bindingAdapterPosition) }
+            binding.itemCompactImage.tvFocusable()
         }
     }
 

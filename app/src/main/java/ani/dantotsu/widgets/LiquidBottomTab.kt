@@ -1,16 +1,23 @@
 package ani.dantotsu.widgets
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -26,11 +33,26 @@ fun RowScope.LiquidBottomTab(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scale = LocalLiquidBottomTabScale.current
+    // A remote gives no pointer to follow, so the focused tab has to say so visually.
+    // clickable() is focusable already; what was missing is any indication of it, since
+    // indication is suppressed here in favour of the bar's own press animation.
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
     Column(
         modifier
             .clip(ContinuousCapsule)
+            .background(
+                if (isFocused) Color.White.copy(alpha = 0.22f) else Color.Transparent,
+                ContinuousCapsule
+            )
+            .border(
+                width = if (isFocused) 2.dp else 0.dp,
+                color = if (isFocused) Color.White.copy(alpha = 0.85f) else Color.Transparent,
+                shape = ContinuousCapsule
+            )
             .clickable(
-                interactionSource = null,
+                interactionSource = interactionSource,
                 indication = null,
                 role = Role.Tab,
                 onClick = onClick

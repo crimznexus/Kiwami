@@ -126,15 +126,14 @@ class MediaDetailsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLi
                 navBar.visibility = View.VISIBLE
             }
         }
-        val navBarRightMargin = if (resources.configuration.orientation ==
-            Configuration.ORIENTATION_LANDSCAPE
-        ) navBarHeight else 0
-        val navBarBottomMargin = if (resources.configuration.orientation ==
-            Configuration.ORIENTATION_LANDSCAPE
-        ) 0 else navBarHeight
-        navBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            rightMargin = navBarRightMargin
-            bottomMargin = navBarBottomMargin
+        // The bar applies its own bottom inset (including the system nav bar) via
+        // LiquidBottomBarMetrics, so only the landscape side inset is set here. Setting
+        // bottomMargin as well used to override the layout and shift this bar relative to
+        // the one on the home screen.
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            navBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                rightMargin = navBarHeight
+            }
         }
         binding.mediaBanner.updateLayoutParams { height += statusBarHeight }
         binding.mediaBannerNoKen.updateLayoutParams { height += statusBarHeight }
@@ -331,6 +330,13 @@ class MediaDetailsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLi
                 binding.mediaNotify.setOnLongClickListener {
                     openLinkInBrowser(media.shareLink)
                     true
+                }
+                binding.mediaAddToCustomList.setOnClickListener {
+                    if (Anilist.userid != null) {
+                        if (supportFragmentManager.findFragmentByTag("add_to_list") == null)
+                            AddToListBottomSheet.newInstance(media)
+                                .show(supportFragmentManager, "add_to_list")
+                    } else snackString(getString(R.string.please_login_anilist))
                 }
                 binding.mediaCover.setOnClickListener {
                     openLinkInBrowser(media.shareLink)

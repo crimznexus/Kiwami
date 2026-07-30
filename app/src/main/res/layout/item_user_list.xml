@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A list renders as a banner card in the same visual language as the manga page's
+     GENRES / TOP SCORE / MY LISTS cards: full-bleed artwork from the list's own entries,
+     dark scrim, bold overlay title, plus an overlapping "deck" of entry covers. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/userListCard"
+    android:layout_width="match_parent"
+    android:layout_height="132dp"
+    android:layout_marginTop="14dp"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/userListBanner"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:ignore="ContentDescription"
+            tools:src="@tools:sample/backgrounds/scenic" />
+
+        <!-- Scrim keeps the white text legible over any artwork (and over the plain
+             surface when a list is empty). -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.60"
+            android:background="@color/bg_black" />
+
+        <!-- Overlapping cover deck, anchored right -->
+        <LinearLayout
+            android:id="@+id/userListCovers"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="18dp"
+            android:orientation="horizontal" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="156dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/userListName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/poppins_bold"
+                android:maxLines="2"
+                android:textColor="@color/bg_white"
+                android:textSize="19sp"
+                tools:text="Favourite Manhwa" />
+
+            <View
+                android:layout_width="48dp"
+                android:layout_height="2dp"
+                android:layout_marginTop="2dp"
+                android:background="?attr/colorPrimary" />
+
+            <TextView
+                android:id="@+id/userListCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:alpha="0.75"
+                android:fontFamily="@font/poppins_semi_bold"
+                android:textColor="@color/bg_white"
+                android:textSize="13sp"
+                tools:text="12 entries" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/userListDelete"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="8dp"
+            android:background="@drawable/circle_scrim"
+            android:contentDescription="@string/delete"
+            android:padding="8dp"
+            app:srcCompat="@drawable/ic_round_delete_24"
+            app:tint="@color/bg_white" />
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>

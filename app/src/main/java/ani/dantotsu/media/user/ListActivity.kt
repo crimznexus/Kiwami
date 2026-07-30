@@ -41,21 +41,24 @@ class ListActivity : AppCompatActivity() {
         ThemeManager(this).applyTheme()
         binding = ActivityListBinding.inflate(layoutInflater)
 
-        val primaryColor = getThemeColor(com.google.android.material.R.attr.colorSurface)
+        // Follow the active theme instead of painting surface-coloured bands: the window
+        // background is android:colorBackground, so the system bars, app bar, and tab
+        // strip use the same colour to read as one continuous themed sheet (matters most
+        // for Liquid Glass, whose surface and background tones differ visibly).
+        val backgroundColor = getThemeColor(android.R.attr.colorBackground)
         val primaryTextColor = getThemeColor(com.google.android.material.R.attr.colorPrimary)
         val secondaryTextColor = getThemeColor(com.google.android.material.R.attr.colorOutline)
 
-        window.statusBarColor = primaryColor
-        window.navigationBarColor = primaryColor
+        window.statusBarColor = backgroundColor
+        window.navigationBarColor = backgroundColor
         binding.listed.visibility = View.GONE
-        binding.listTabLayout.setBackgroundColor(primaryColor)
-        binding.listAppBar.setBackgroundColor(primaryColor)
+        binding.listTabLayout.setBackgroundColor(backgroundColor)
+        binding.listAppBar.setBackgroundColor(backgroundColor)
         binding.listTitle.setTextColor(primaryTextColor)
         binding.listTabLayout.setTabTextColors(secondaryTextColor, primaryTextColor)
         binding.listTabLayout.setSelectedTabIndicatorColor(primaryTextColor)
         if (!PrefManager.getVal<Boolean>(PrefName.ImmersiveMode)) {
-            this.window.statusBarColor =
-                ContextCompat.getColor(this, R.color.nav_bg_inv)
+            this.window.statusBarColor = backgroundColor
             binding.root.fitsSystemWindows = true
 
         } else {
@@ -101,9 +104,18 @@ class ListActivity : AppCompatActivity() {
             if (it != null) {
                 binding.listProgressBar.visibility = View.GONE
                 binding.listViewPager.adapter = ListViewPagerAdapter(it.size, false, this)
-                val keys = it.keys.toList()
+                val rawKeys = it.keys.toList()
+                val keys = rawKeys
                     .map { key -> userKeys.getOrNull(defaultKeys.indexOf(key)) ?: key }
                 val values = it.values.toList()
+                // Allow callers (e.g. CustomListsActivity) to land directly on a named
+                // list's tab. Only consumed on first load so later refreshes keep the
+                // user's own tab selection.
+                val requestedList = intent.getStringExtra("selectedList")
+                if (requestedList != null && this.selectedTabIdx == 0) {
+                    val idx = rawKeys.indexOf(requestedList)
+                    if (idx >= 0) this.selectedTabIdx = idx
+                }
                 val savedTab = this.selectedTabIdx
                 TabLayoutMediator(binding.listTabLayout, binding.listViewPager) { tab, position ->
                     tab.text = "${keys[position]} (${values[position].size})"

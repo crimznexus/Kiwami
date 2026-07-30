@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/customListsRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/customListsAppBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
+
+        <ImageButton
+            android:id="@+id/customListsBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/close"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_round_arrow_back_ios_new_24"
+            app:tint="?attr/colorOnBackground" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/poppins_bold"
+            android:text="@string/my_lists"
+            android:textColor="?attr/colorOnBackground"
+            android:textSize="20sp" />
+
+        <ImageButton
+            android:id="@+id/customListsCreate"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/create_new_list"
+            android:padding="12dp"
+            app:srcCompat="@drawable/ic_round_add_circle_24"
+            app:tint="?attr/colorPrimary" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/customListsProgress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="48dp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/customListsRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp" />
+
+    <TextView
+        android:id="@+id/customListsEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fontFamily="@font/poppins_family"
+        android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:text="@string/no_custom_lists"
+        android:textColor="?attr/colorOnBackground"
+        android:textSize="15sp"
+        android:visibility="gone" />
+</LinearLayout>

@@ -25,6 +25,8 @@ import ani.dantotsu.databinding.LayoutTrendingBinding
 import ani.dantotsu.getAppString
 import ani.dantotsu.getThemeColor
 import ani.dantotsu.loadImage
+import ani.dantotsu.media.user.CustomListsActivity
+import ani.dantotsu.snackString
 import ani.dantotsu.media.GenreActivity
 import ani.dantotsu.media.Media
 import ani.dantotsu.media.MediaAdaptor
@@ -143,6 +145,19 @@ class MangaPageAdapter : RecyclerView.Adapter<MangaPageAdapter.MangaPageViewHold
                     .putExtra("search", true),
                 null
             )
+        }
+
+        // Custom lists live on the AniList account, so the card only shows when logged in.
+        binding.mangaUserLists.isVisible = Anilist.userid != null
+        binding.mangaUserListsImage.loadImage("https://s4.anilist.co/file/anilistcdn/media/manga/banner/30013-tepA3AbSHKqc.jpg")
+        binding.mangaUserLists.setOnClickListener {
+            if (Anilist.userid != null) {
+                ContextCompat.startActivity(
+                    it.context,
+                    Intent(it.context, CustomListsActivity::class.java).putExtra("type", "MANGA"),
+                    null
+                )
+            } else snackString(it.context.getString(R.string.custom_lists_login_required))
         }
 
         binding.mangaIncludeList.isVisible = Anilist.userid != null

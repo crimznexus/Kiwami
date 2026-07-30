@@ -27,8 +27,7 @@ class MediaListViewActivity : AppCompatActivity() {
         ThemeManager(this).applyTheme()
         initActivity(this)
         if (!PrefManager.getVal<Boolean>(PrefName.ImmersiveMode)) {
-            this.window.statusBarColor =
-                ContextCompat.getColor(this, R.color.nav_bg_inv)
+            this.window.statusBarColor = getThemeColor(android.R.attr.colorBackground)
             binding.root.fitsSystemWindows = true
 
         } else {
@@ -42,13 +41,13 @@ class MediaListViewActivity : AppCompatActivity() {
 
         setContentView(binding.root)
 
-        val primaryColor = getThemeColor(com.google.android.material.R.attr.colorSurface)
+        // Match the themed window background rather than surface bands; see ListActivity.
+        val backgroundColor = getThemeColor(android.R.attr.colorBackground)
         val primaryTextColor = getThemeColor(com.google.android.material.R.attr.colorPrimary)
-        val secondaryTextColor = getThemeColor(com.google.android.material.R.attr.colorOutline)
 
-        window.statusBarColor = primaryColor
-        window.navigationBarColor = primaryColor
-        binding.listAppBar.setBackgroundColor(primaryColor)
+        window.statusBarColor = backgroundColor
+        window.navigationBarColor = backgroundColor
+        binding.listAppBar.setBackgroundColor(backgroundColor)
         binding.listTitle.setTextColor(primaryTextColor)
         val screenWidth = resources.displayMetrics.run { widthPixels / density }
         val mediaList =

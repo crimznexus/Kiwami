@@ -1,21 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="768"
-    android:viewportHeight="768">
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Kiwami mark: a rounded "K" paired with a play glyph.
+         All geometry sits inside the adaptive-icon safe zone (the centre 66x66
+         of the 108x108 canvas, i.e. 21..87 on both axes) so no launcher mask
+         can clip it. Arms meet the stem at y=54 and their round caps overlap
+         the stem, which is what visually joins the letterform. -->
     <group>
-        <clip-path android:pathData="M125.71,125.71h516.58v516.58h-516.58z" />
+        <!-- stem -->
         <path
-            android:fillColor="#1f1f30"
-            android:pathData="m44.26,128c0,46.25 37.49,83.74 83.74,83.74h256c95.13,0 172.26,77.12 172.26,172.26h0c0,95.13 -77.12,172.26 -172.26,172.26H128c-46.24,0 -83.72,37.47 -83.74,83.71h723.74V128H44.26Z"
-            android:strokeWidth="0" />
+            android:pathData="M33,33 V75"
+            android:strokeColor="#FFF5F8"
+            android:strokeWidth="9"
+            android:strokeLineCap="round" />
+        <!-- upper arm -->
         <path
-            android:fillColor="#1f1f30"
-            android:pathData="m481.82,384h0c0,54.03 -43.8,97.82 -97.82,97.82H0v-195.64h384c54.02,0 97.82,43.8 97.82,97.82Z"
-            android:strokeWidth="0" />
+            android:pathData="M38.5,54 L53,35.5"
+            android:strokeColor="#FFF5F8"
+            android:strokeWidth="8.5"
+            android:strokeLineCap="round" />
+        <!-- lower arm -->
         <path
-            android:fillColor="#efe7ff"
-            android:pathData="m442,366.7l-76.02,-43.89c-13.32,-7.69 -29.96,1.92 -29.96,17.3v87.78c0,15.38 16.65,24.99 29.96,17.3l76.02,-43.89c13.32,-7.69 13.32,-26.91 0,-34.6Z"
-            android:strokeWidth="0" />
+            android:pathData="M38.5,54 L53,72.5"
+            android:strokeColor="#FFF5F8"
+            android:strokeWidth="8.5"
+            android:strokeLineCap="round" />
+        <!-- play glyph: fill plus a same-colour round-joined stroke, which is
+             what rounds the three corners without hand-authoring arcs. -->
+        <path
+            android:pathData="M64,44.5 L77,54 L64,63.5 Z"
+            android:fillColor="#FFB3C6"
+            android:strokeColor="#FFB3C6"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
     </group>
 </vector>

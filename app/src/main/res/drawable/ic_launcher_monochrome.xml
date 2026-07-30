@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Themed-icon layer (Android 13+). The system reads only the alpha
+         channel here and applies the user's wallpaper colours, so the whole
+         mark is drawn flat in one colour rather than in the brand palette. -->
+    <group>
+        <path
+            android:pathData="M33,33 V75"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="9"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M38.5,54 L53,35.5"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="8.5"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M38.5,54 L53,72.5"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="8.5"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M64,44.5 L77,54 L64,63.5 Z"
+            android:fillColor="#FFFFFF"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+</vector>

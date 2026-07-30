@@ -1,31 +1,30 @@
-# ReDantotsu
+# Kiwami
 
 <p align="center">
-  <a href="https://github.com/AsrOfficialDev/ReDantotsu/releases/latest">
-    <img src="https://img.shields.io/github/v/release/AsrOfficialDev/ReDantotsu?style=for-the-badge&logo=github&color=00bfff&label=Current%20Release" alt="Current Release">
+  <a href="https://github.com/crimznexus/Kiwami/releases/latest">
+    <img src="https://img.shields.io/github/v/release/crimznexus/Kiwami?style=for-the-badge&logo=github&color=e0325b&label=Current%20Release" alt="Current Release">
   </a>
-  <a href="https://github.com/AsrOfficialDev/ReDantotsu/releases">
-    <img src="https://img.shields.io/github/downloads/AsrOfficialDev/ReDantotsu/total?style=for-the-badge&logo=github&color=2ea44f&label=Total%20Downloads" alt="Total Downloads">
+  <a href="https://github.com/crimznexus/Kiwami/releases">
+    <img src="https://img.shields.io/github/downloads/crimznexus/Kiwami/total?style=for-the-badge&logo=github&color=2ea44f&label=Total%20Downloads" alt="Total Downloads">
   </a>
-  <a href="https://github.com/AsrOfficialDev/ReDantotsu/stargazers">
-    <img src="https://img.shields.io/github/stars/AsrOfficialDev/ReDantotsu?style=for-the-badge&logo=github&color=yellow&label=Stars" alt="Stars">
-  </a>
-  <a href="https://discord.gg/fYEJmDsDz9">
-    <img src="https://img.shields.io/badge/Discord-Join%20Us-7289da?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
+  <a href="https://github.com/crimznexus/Kiwami/stargazers">
+    <img src="https://img.shields.io/github/stars/crimznexus/Kiwami?style=for-the-badge&logo=github&color=yellow&label=Stars" alt="Stars">
   </a>
   <a href="./LICENSE.md">
     <img src="https://img.shields.io/badge/License-UPL-blue?style=for-the-badge&logo=open-source-initiative&logoColor=white" alt="License: UPL">
   </a>
-  <img src="https://img.shields.io/badge/Android-14%2B-green?style=for-the-badge&logo=android" alt="Android 14+">
-  <img src="https://komarev.com/ghpvc/?username=AsrOfficialDev-ReDantotsu&style=for-the-badge&label=Visits" alt="Visits">
+  <img src="https://img.shields.io/badge/Android-6.0%2B-green?style=for-the-badge&logo=android" alt="Android 6.0+">
 </p>
 
-> **✨ The Ultimate Anime & Manga Experience for Android**
+> **極み — The pinnacle of Anime & Manga on Android**
 
-ReDantotsu is a premium fan remake of the beloved Dantotsu application. I've taken the robust foundation of the original app and completely reimagined it, introducing a modern UI, expanding core functionality, and implementing crucial stability fixes to deliver the definitive anime and manga tracking experience.
+Kiwami is an AniList client that lets you stream and download anime through extensions and read manga, wrapped in a Liquid Glass UI. It is a fork of [ReDantotsu](https://github.com/AsrOfficialDev/ReDantotsu), which remade [Dantotsu](https://github.com/rebelonion/Dantotsu), which grew out of Saikou.
+
+Kiwami (極み) means "the pinnacle" in Japanese.
 
 ## 📋 Table of Contents
-- [What's New in ReDantotsu](#-whats-new-in-redantotsu)
+- [Changes in Kiwami](#-changes-in-kiwami)
+- [Inherited from ReDantotsu](#-inherited-from-redantotsu)
 - [Screenshots](#-screenshots)
 - [Installation](#-installation)
 - [Building from Source](#building-from-source)
@@ -35,26 +34,24 @@ ReDantotsu is a premium fan remake of the beloved Dantotsu application. I've tak
 - [Disclaimer](#disclaimer)
 - [Contributing](#-contributing)
 
-## ✨ What's New in ReDantotsu
+## ✨ Changes in Kiwami
 
-We've extensively upgraded the app far beyond a simple visual reskin. Here is what makes ReDantotsu the best version yet:
+- **New identity** — new crimson "K + play" adaptive launcher icon, including a monochrome layer so Android 13+ themed icons work, and legacy raster icons so the launcher icon actually renders on Android 6–7 (upstream shipped no `ic_launcher.png` at all despite `minSdk 23`).
+- **Smaller APK** — the 4.6 MB animated WebP splash (the repo's single largest file) is replaced by a 17 KB raster derived from the icon vector, and the orphaned launcher foreground PNGs are gone. The universal APK drops from 61.2 MB to 56.3 MB; arm64-v8a from 41.5 MB to 36.5 MB.
+- **Buildable F-Droid flavor** — the `google-services`/Crashlytics plugins were being applied project-wide from inside the `google` product flavor, which forced the Firebase-free `fdroid` build to demand a `google-services.json`. They are now applied only when a `google` variant is actually built.
 
-### 🌟 Brand New Features
-- **Expanded Home Experience** - A redesigned home screen featuring dedicated Anime and Manga sections for better content discovery.
-- **Source Deduplication** - Intelligent handling of extensions to eliminate duplicate entries and streamline your library.
-- **Enhanced Integration** - Upgraded and fully stable AniList login utilizing modern dashboard redirect URIs, alongside MyAnimeList rating support.
+## 🌟 Inherited from ReDantotsu
 
-### 🎨 Premium UI Overhaul (Liquid Glass)
-- **Real-time Backdrop Blur** - Beautiful glass surfaces that dynamically blur content behind them for an iOS-inspired aesthetic.
-- **Redesigned Navigation** - Modern pill-shaped bottom bars and a stunning sliding glass settings overlay.
-- **Fluid Animations** - Smooth 60fps spring animations with subtle lens distortion and optimized GPU load.
-- **Polished Visuals** - Consistent dark/light theming, flawless profile picture rendering, and improved layout consistency.
+These came from ReDantotsu rather than Kiwami:
 
-### 🔧 Core Fixes & Optimizations
-- **Stable Core Systems** - Fixed the in-app update checker and resolved complex fragment lifecycle glitches present in the original app.
-- **Optimized Performance** - Better memory management using derived state recomposition, allowing for a faster and smoother browsing experience.
+- **Expanded Home Experience** — dedicated Anime and Manga sections.
+- **Source Deduplication** — eliminates duplicate extension entries.
+- **Liquid Glass UI** — real-time backdrop blur, pill-shaped bottom bars, sliding glass settings overlay, spring animations.
+- **Enhanced Integration** — AniList login via modern dashboard redirect URIs, plus MyAnimeList rating support.
 
 ## 📸 Screenshots
+
+> These are ReDantotsu's screenshots; the UI is unchanged in Kiwami apart from branding, so they still reflect the layout.
 
 | Home | Manga | Anime |
 |:---:|:---:|:---:|
@@ -62,22 +59,32 @@ We've extensively upgraded the app far beyond a simple visual reskin. Here is wh
 
 ## 📥 Installation
 
-1. Download the latest APK from the [Releases](https://github.com/AsrOfficialDev/ReDantotsu/releases) page.
+1. Download the latest APK from the [Releases](https://github.com/crimznexus/Kiwami/releases) page.
 2. Enable "Install from unknown sources" if prompted by your device.
 3. Install and enjoy!
 
 ## 🛠️ Building from Source <a name="building-from-source"></a>
 
+**Requires JDK 21.** Gradle 8.11.1's bundled Kotlin compiler cannot parse a Java 25+ version string and fails with a bare `IllegalArgumentException: 25.0.2`, which names no file and gives no hint that the JDK is the problem.
+
 ```bash
-# Clone the repository
-git clone https://github.com/AsrOfficialDev/ReDantotsu.git
-cd ReDantotsu
+git clone https://github.com/crimznexus/Kiwami.git
+cd Kiwami
 
-# Build debug APK
+# Build the F-Droid flavor — no Firebase config needed
+./gradlew assembleFdroidAlpha
+```
+
+The `google` flavor additionally needs an `app/google-services.json` (see `app/google-services.json.example`, whose `package_name` must match the `applicationId` in `app/build.gradle`):
+
+```bash
 ./gradlew assembleGoogleAlpha
+```
 
-# Or build release APK (requires signing config)
-./gradlew assembleGoogleRelease
+ABI splits are enabled, so `app/build/outputs/apk/` contains `armeabi-v7a` and `arm64-v8a` APKs plus a universal one. x86_64 emulators need the **universal** APK:
+
+```bash
+adb install -r -t app/build/outputs/apk/fdroid/alpha/ReDantotsu-universal-alpha.apk
 ```
 
 ## 🎯 Features
@@ -97,9 +104,12 @@ cd ReDantotsu
 - Built from the ashes of Saikou
 
 ### ReDantotsu
-- **Fan Remake Developer:** Ashraful
+- **Fan Remake Developer:** Ashraful ([AsrOfficialDev](https://github.com/AsrOfficialDev))
 - **Liquid Glass Effect:** Based on iOS 26 design language
 - **Backdrop Library:** [backdrop](https://github.com/kyant0/backdrop) by kyant0
+
+### Kiwami
+- **Fork Maintainer:** [crimznexus](https://github.com/crimznexus)
 
 ## 📜 License <a name="license"></a>
 
@@ -115,23 +125,11 @@ This project is licensed under the **Unabandon Public License (UPL)**, which ext
 
 ## ⚠️ Disclaimer <a name="disclaimer"></a>
 
-- ReDantotsu does not host any content. All streaming sources come from 3rd party extensions.
-- ReDantotsu is not affiliated with AniList, MyAnimeList, or any content providers.
+- Kiwami does not host any content. All streaming sources come from 3rd party extensions.
+- Kiwami is not affiliated with AniList, MyAnimeList, or any content providers.
 - All anime/manga information is sourced from public APIs.
 - The developers are not responsible for any misuse of the app.
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-<p align="center">
-  <b>ReDantotsu</b> • A Premium Anime & Manga Client ✨
-</p>

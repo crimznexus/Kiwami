@@ -11,6 +11,19 @@ def gitCommitHash = providers.exec {
     commandLine("git", "rev-parse", "--verify", "--short", "HEAD")
 }.standardOutput.asText.get().trim()
 
+// These have to be applied at the project level: `apply plugin` inside a
+// productFlavor block leaks to every flavor, which forced the Firebase-free
+// fdroid build to demand a google-services.json. Only apply them when a google
+// variant is actually being built, so the fdroid build stays self-contained and
+// a missing google-services.json still fails loudly for google builds.
+def buildingGoogleFlavor = gradle.startParameter.taskNames.any {
+    it.toLowerCase().contains("google")
+}
+if (buildingGoogleFlavor || file("google-services.json").exists()) {
+    apply plugin: 'com.google.gms.google-services'
+    apply plugin: 'com.google.firebase.crashlytics'
+}
+
 android {
     compileSdk 35
 
@@ -35,8 +48,6 @@ android {
             // Google Play specific configuration
             dimension "store"
             isDefault true
-            apply plugin: 'com.google.gms.google-services'
-            apply plugin: 'com.google.firebase.crashlytics'
         }
     }
 
@@ -93,7 +104,7 @@ android {
         variant.outputs.all { output ->
             def abi = output.getFilter(com.android.build.OutputFile.ABI)
             if (abi == null) abi = "universal"
-            outputFileName = "ReDantotsu-${abi}-${variant.buildType.name}.apk"
+            outputFileName = "Kiwami-${abi}-${variant.buildType.name}.apk"
         }
     }
 }

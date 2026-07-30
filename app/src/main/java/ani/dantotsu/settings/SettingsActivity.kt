@@ -200,9 +200,6 @@ class SettingsActivity : AppCompatActivity() {
                 settingPatreon.pop()
             }
 
-            loginDiscord.setOnClickListener {
-                openLinkInBrowser(getString(R.string.discord))
-            }
             loginGithub.setOnClickListener {
                 openLinkInBrowser(getString(R.string.github))
             }

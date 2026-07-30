@@ -229,6 +229,7 @@
             android:name=".media.CalendarActivity"
             android:parentActivityName=".MainActivity" />
         <activity android:name=".media.user.ListActivity" />
+        <activity android:name=".media.user.CustomListsActivity" />
         <activity
             android:name=".profile.SingleStatActivity"
             android:parentActivityName=".profile.ProfileActivity" />
@@ -297,42 +298,14 @@
                     android:scheme="redantotsu" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".connections.discord.Login"
-            android:configChanges="orientation|screenSize|layoutDirection"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:launchMode="singleTask">
-            <intent-filter android:label="Discord Login for Dantotsu">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="redantotsu" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-                <data android:host="discord.redantotsu.com" />
-            </intent-filter>
-        </activity>
+        <!-- Only ever started with an explicit Intent from the source adapters, so it
+             needs no intent-filter and must not be exported. -->
         <activity
             android:name=".others.webview.CookieCatcher"
             android:configChanges="orientation|screenSize|layoutDirection"
             android:excludeFromRecents="true"
-            android:exported="true"
-            android:launchMode="singleTask">
-            <intent-filter android:label="Discord Login for Dantotsu">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="redantotsu" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-                <data android:host="discord.redantotsu.com" />
-            </intent-filter>
-        </activity>
+            android:exported="false"
+            android:launchMode="singleTask" />
         <activity
             android:name=".connections.anilist.UrlMedia"
             android:configChanges="orientation|screenSize|layoutDirection"
@@ -469,10 +442,6 @@
             android:foregroundServiceType="dataSync" />
         <service
             android:name=".download.anime.AnimeDownloaderService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-        <service
-            android:name=".connections.discord.DiscordService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
         <service

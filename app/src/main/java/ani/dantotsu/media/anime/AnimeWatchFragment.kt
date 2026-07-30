@@ -44,6 +44,7 @@ import ani.dantotsu.media.MediaDetailsViewModel
 import ani.dantotsu.media.MediaNameAdapter
 import ani.dantotsu.media.MediaType
 import ani.dantotsu.navBarHeight
+import ani.dantotsu.setBaseline
 import ani.dantotsu.notifications.subscription.SubscriptionHelper
 import ani.dantotsu.notifications.subscription.SubscriptionHelper.Companion.saveSubscription
 import ani.dantotsu.others.LanguageMapper
@@ -125,7 +126,13 @@ class AnimeWatchFragment : Fragment() {
         )
 
 
-        binding.mediaSourceRecycler.updatePadding(bottom = binding.mediaSourceRecycler.paddingBottom + navBarHeight)
+        // Pad the list past the floating bottom bar so the last item (the FAQ chip)
+        // is reachable above it instead of being covered by the capsule.
+        (activity as? MediaDetailsActivity)?.let {
+            binding.mediaSourceRecycler.setBaseline(it.navBar)
+        } ?: binding.mediaSourceRecycler.updatePadding(
+            bottom = binding.mediaSourceRecycler.paddingBottom + navBarHeight
+        )
         screenWidth = resources.displayMetrics.widthPixels.dp
 
         var maxGridSize = (screenWidth / 100f).roundToInt()

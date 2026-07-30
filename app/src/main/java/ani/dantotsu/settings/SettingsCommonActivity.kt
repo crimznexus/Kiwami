@@ -393,6 +393,29 @@ class SettingsCommonActivity : AppCompatActivity() {
                         ),
                         Settings(
                             type = 2,
+                            name = getString(R.string.adult_content),
+                            desc = getString(R.string.adult_content_desc),
+                            icon = R.drawable.ic_round_nsfw_24,
+                            isChecked = AdultContent.enabled,
+                            switch = { isChecked, view ->
+                                // Only act on a real change: the cancel path below flips the
+                                // switch back, which re-enters here with the stored value
+                                // already matching and must not restart or re-prompt.
+                                when {
+                                    isChecked && !AdultContent.enabled -> confirmAdultContent {
+                                        view.settingsButton.isChecked = false
+                                    }
+
+                                    !isChecked && AdultContent.enabled -> {
+                                        AdultContent.enabled = false
+                                        toast(getString(R.string.adult_content_off))
+                                        restartApp()
+                                    }
+                                }
+                            },
+                        ),
+                        Settings(
+                            type = 2,
                             name = getString(R.string.adult_only_content),
                             desc = getString(R.string.adult_only_content_desc),
                             icon = R.drawable.ic_round_nsfw_24,
@@ -401,7 +424,7 @@ class SettingsCommonActivity : AppCompatActivity() {
                                 PrefManager.setVal(PrefName.AdultOnly, isChecked)
                                 restartApp()
                             },
-                            isVisible = Anilist.adult,
+                            isVisible = AdultContent.isAllowed,
                         ),
                     ),
                 )
@@ -440,6 +463,30 @@ class SettingsCommonActivity : AppCompatActivity() {
             uiSettingsManga.setOnClickListener {
                 uiDefault(2, it)
             }
+        }
+    }
+
+    /**
+     * Opt-in gate for 18+ material: the switch only sticks once the warning has been read
+     * and accepted. [revert] puts the switch back for any other outcome — cancel, back
+     * press, tapping outside.
+     */
+    private fun confirmAdultContent(revert: () -> Unit) {
+        customAlertDialog().apply {
+            setTitle(getString(R.string.adult_content_warning_title))
+            setMessage(getString(R.string.adult_content_warning))
+            setPosButton(getString(R.string.adult_content_understand)) {
+                AdultContent.enabled = true
+                // The account option governs what AniList will even return, so opting in
+                // here alone can look like nothing happened.
+                if (AdultContent.blockedByAnilist)
+                    toast(getString(R.string.adult_content_anilist_required))
+                else toast(getString(R.string.adult_content_on))
+                restartApp()
+            }
+            setNegButton(getString(R.string.cancel))
+            onDismiss { if (!AdultContent.enabled) revert() }
+            show()
         }
     }
 

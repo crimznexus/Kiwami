@@ -51,6 +51,7 @@ enum class PrefName(val data: Pref) {
     UseAlarmManager(Pref(Location.General, Boolean::class, false)),
     IncludeAnimeList(Pref(Location.General, Boolean::class, true)),
     IncludeMangaList(Pref(Location.General, Boolean::class, true)),
+    AdultContentEnabled(Pref(Location.General, Boolean::class, false)),
     AdultOnly(Pref(Location.General, Boolean::class, false)),
     CommentsEnabled(Pref(Location.General, Int::class, 0)),
     EnableSocks5Proxy(Pref(Location.General, Boolean::class, false)),

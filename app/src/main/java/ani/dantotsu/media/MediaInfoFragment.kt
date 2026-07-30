@@ -43,6 +43,7 @@ import ani.dantotsu.navBarHeight
 import ani.dantotsu.profile.User
 import ani.dantotsu.px
 import ani.dantotsu.setSafeOnClickListener
+import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import com.xwray.groupie.GroupieAdapter
@@ -500,7 +501,7 @@ class MediaInfoFragment : Fragment() {
                                     .putExtra("search", true)
                                     .also {
                                         if (media.isAdult) {
-                                            if (!Anilist.adult) Toast.makeText(
+                                            if (!AdultContent.isAllowed) Toast.makeText(
                                                 chip.context,
                                                 currActivity()?.getString(R.string.content_18),
                                                 Toast.LENGTH_SHORT

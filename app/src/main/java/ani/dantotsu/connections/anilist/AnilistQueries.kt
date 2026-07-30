@@ -23,6 +23,7 @@ import ani.dantotsu.media.Media
 import ani.dantotsu.media.Studio
 import ani.dantotsu.others.MalScraper
 import ani.dantotsu.profile.User
+import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.snackString
@@ -446,7 +447,7 @@ class AnilistQueries {
                 response.data.page2.activities
             ).asSequence().flatten()
                 .filter { it.typename != "MessageActivity" }
-                .filter { if (Anilist.adult) true else it.media?.isAdult != true }
+                .filter { if (AdultContent.isAllowed) true else it.media?.isAdult != true }
                 .filter { it.createdAt * 1000L > threeDaysAgo }.toList()
                 .sortedByDescending { it.createdAt }
             val anilistActivities = mutableListOf<User>()
@@ -1191,7 +1192,7 @@ class AnilistQueries {
             type == "MANGA" && !getPreference(PrefName.IncludeMangaList) -> "onList:false"
             else -> ""
         }
-        val isAdult = if (getPreference(PrefName.AdultOnly)) "isAdult:true" else ""
+        val isAdult = if (AdultContent.adultOnlyFilter) "isAdult:true" else ""
         val formatFilter = format?.let { "format:$it, " } ?: ""
         val countryFilter = country?.let { "countryOfOrigin:$it, " } ?: ""
 
@@ -1263,7 +1264,7 @@ class AnilistQueries {
 
         fun filterRecentUpdates(page: Page?): ArrayList<Media> {
             val listOnly = getPreference(PrefName.RecentlyListOnly)
-            val adultOnly = getPreference(PrefName.AdultOnly)
+            val adultOnly = AdultContent.adultOnlyFilter
             val idArr = mutableSetOf<Int>()
             return page?.airingSchedules?.mapNotNull { i ->
                 i.media?.takeIf { !idArr.contains(it.id) }?.let {
@@ -1340,7 +1341,7 @@ Page(page:$page,perPage:50) {
             res = execute(i)
             list.addAll(res?.airingSchedules?.mapNotNull { j ->
                 j.media?.let {
-                    if (it.countryOfOrigin == "JP" && (if (!Anilist.adult) it.isAdult == false else true)) {
+                    if (it.countryOfOrigin == "JP" && (if (!AdultContent.isAllowed) it.isAdult == false else true)) {
                         Media(it).apply { relation = "${j.episode},${j.airingAt}" }
                     } else null
                 }

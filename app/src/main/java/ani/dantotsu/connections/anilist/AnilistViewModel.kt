@@ -12,6 +12,7 @@ import ani.dantotsu.connections.mal.MAL
 import ani.dantotsu.media.Media
 import ani.dantotsu.others.AppUpdater
 import ani.dantotsu.profile.User
+import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.snackString
@@ -143,7 +144,7 @@ class AnilistAnimeViewModel : ViewModel() {
                 season = season,
                 seasonYear = year,
                 hd = true,
-                adultOnly = PrefManager.getVal(PrefName.AdultOnly)
+                adultOnly = AdultContent.adultOnlyFilter
             )?.results
         )
     }
@@ -166,7 +167,7 @@ class AnilistAnimeViewModel : ViewModel() {
                 onList = if (onList) null else false,
                 sort = sort,
                 genres = genres,
-                adultOnly = PrefManager.getVal(PrefName.AdultOnly)
+                adultOnly = AdultContent.adultOnlyFilter
             )
         )
     }
@@ -187,7 +188,7 @@ class AnilistAnimeViewModel : ViewModel() {
             r.countryOfOrigin,
             r.isAdult,
             r.onList,
-            adultOnly = PrefManager.getVal(PrefName.AdultOnly),
+            adultOnly = AdultContent.adultOnlyFilter,
         )
     )
 
@@ -236,7 +237,7 @@ class AnilistMangaViewModel : ViewModel() {
                 perPage = 10,
                 sort = Anilist.sortBy[2],
                 hd = true,
-                adultOnly = PrefManager.getVal(PrefName.AdultOnly)
+                adultOnly = AdultContent.adultOnlyFilter
             )?.results
         )
 
@@ -257,7 +258,7 @@ class AnilistMangaViewModel : ViewModel() {
                 onList = if (onList) null else false,
                 sort = sort,
                 genres = genres,
-                adultOnly = PrefManager.getVal(PrefName.AdultOnly)
+                adultOnly = AdultContent.adultOnlyFilter
             )
         )
     }
@@ -283,7 +284,7 @@ class AnilistMangaViewModel : ViewModel() {
             r.startYear,
             r.seasonYear,
             r.season,
-            adultOnly = PrefManager.getVal(PrefName.AdultOnly)
+            adultOnly = AdultContent.adultOnlyFilter
         )
     )
 

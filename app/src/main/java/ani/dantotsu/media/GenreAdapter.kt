@@ -13,6 +13,7 @@ import ani.dantotsu.currActivity
 import ani.dantotsu.databinding.ItemGenreBinding
 import ani.dantotsu.loadImage
 import ani.dantotsu.px
+import ani.dantotsu.settings.AdultContent
 
 class GenreAdapter(
     private val type: String,
@@ -50,7 +51,7 @@ class GenreAdapter(
                         .putExtra("search", true)
                         .also {
                             if (pos[bindingAdapterPosition].lowercase() == "hentai") {
-                                if (!Anilist.adult) Toast.makeText(
+                                if (!AdultContent.isAllowed) Toast.makeText(
                                     itemView.context,
                                     currActivity()?.getString(R.string.content_18),
                                     Toast.LENGTH_SHORT

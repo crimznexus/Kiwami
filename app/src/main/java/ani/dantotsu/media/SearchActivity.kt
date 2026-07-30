@@ -26,6 +26,7 @@ import ani.dantotsu.initActivity
 import ani.dantotsu.navBarHeight
 import ani.dantotsu.profile.UsersAdapter
 import ani.dantotsu.px
+import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.statusBarHeight
@@ -88,7 +89,7 @@ class SearchActivity : AppCompatActivity() {
                     model.notSet = false
                     model.aniMangaSearchResults = AniMangaSearchResults(
                         intent.getStringExtra("type") ?: "ANIME",
-                        isAdult = if (Anilist.adult) intent.getBooleanExtra(
+                        isAdult = if (AdultContent.isAllowed) intent.getBooleanExtra(
                             "hentai",
                             false
                         ) else false,

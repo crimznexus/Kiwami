@@ -935,6 +935,14 @@ Non quae tempore quo provident laudantium qui illo dolor vel quia dolor et exerc
     <string name="most_favourite">Most Favourite</string>
     <string name="trending_manhwa">Trending Manhwa</string>
     <string name="liked_by">Liked By</string>
+    <string name="adult_content">Adult content</string>
+    <string name="adult_content_desc">Allow titles marked 18+ to appear in search, explore, and recommendations</string>
+    <string name="adult_content_warning_title">Show adult content?</string>
+    <string name="adult_content_warning">Kiwami will start showing titles marked 18+ across search, explore, and recommendations.\n\nBy continuing you confirm that you are of legal age where you live, and that what you choose to view is your responsibility alone. The developer neither endorses nor recommends this content, and asks that you engage with it lawfully, ethically, and with respect for the people around you.\n\nYou can turn this off again at any time in Settings.</string>
+    <string name="adult_content_understand">I understand</string>
+    <string name="adult_content_on">Adult content is now visible</string>
+    <string name="adult_content_off">Adult content is now hidden</string>
+    <string name="adult_content_anilist_required">Also switch on \"Adult content\" in your AniList account settings — until then AniList will keep 18+ titles hidden.</string>
     <string name="adult_only_content">Adult only content</string>
     <string name="dir_error">Your path could not be set</string>
     <string name="dir_access">Downloads access</string>

@@ -24,6 +24,7 @@ import ani.dantotsu.connections.anilist.AnilistSearch.SearchType
 import ani.dantotsu.databinding.ItemChipBinding
 import ani.dantotsu.openLinkInBrowser
 import ani.dantotsu.others.imagesearch.ImageSearchActivity
+import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import com.google.android.material.checkbox.MaterialCheckBox.STATE_CHECKED
@@ -243,7 +244,7 @@ class SearchAdapter(private val activity: SearchActivity, private val type: Sear
             activity.recycler()
         }
 
-        if (Anilist.adult) {
+        if (AdultContent.isAllowed) {
             binding.searchAdultCheck.visibility = View.VISIBLE
             binding.searchAdultCheck.isChecked = adult
             binding.searchAdultCheck.setOnCheckedChangeListener { _, b ->

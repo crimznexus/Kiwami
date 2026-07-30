@@ -19,6 +19,7 @@ import ani.dantotsu.databinding.FragmentFeedBinding
 import ani.dantotsu.media.MediaDetailsActivity
 import ani.dantotsu.navBarHeight
 import ani.dantotsu.profile.ProfileActivity
+import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.util.ActivityMarkdownCreator
 import com.xwray.groupie.GroupieAdapter
 import eu.kanade.tachiyomi.util.system.getSerializableCompat
@@ -118,7 +119,7 @@ class ActivityFragment : Fragment() {
         val res = Anilist.query.getFeed(userId, global, page, activityId)?.data?.page?.activities
         page += 1
         return res
-            ?.filter { if (Anilist.adult) true else it.media?.isAdult != true }
+            ?.filter { if (AdultContent.isAllowed) true else it.media?.isAdult != true }
             ?.filterNot { it.recipient?.id != null && it.recipient.id != Anilist.userid && filter }
             ?: emptyList()
     }

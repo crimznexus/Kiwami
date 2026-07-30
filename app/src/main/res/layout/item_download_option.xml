@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One tappable range row in the manga download sheet ("Next 5 chapters", …). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:drawablePadding="12dp"
+    android:fontFamily="@font/poppins_semi_bold"
+    android:gravity="center_vertical"
+    android:minHeight="48dp"
+    android:textColor="?attr/colorOnBackground"
+    android:textSize="15sp"
+    app:drawableStartCompat="@drawable/ic_download_24"
+    app:drawableTint="?attr/colorPrimary"
+    tools:text="Next 5 chapters" />

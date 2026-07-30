@@ -30,10 +30,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import ani.dantotsu.R
+import ani.dantotsu.databinding.BottomSheetMangaDownloadBinding
 import ani.dantotsu.databinding.FragmentMediaSourceBinding
+import ani.dantotsu.databinding.ItemChipBinding
+import ani.dantotsu.databinding.ItemDownloadOptionBinding
 import ani.dantotsu.download.DownloadedType
 import ani.dantotsu.download.DownloadsManager
 import ani.dantotsu.download.DownloadsManager.Companion.compareName
+import ani.dantotsu.download.manga.MangaAutoDownloader
 import ani.dantotsu.download.manga.MangaDownloaderService
 import ani.dantotsu.download.manga.MangaServiceDataSingleton
 import ani.dantotsu.dp
@@ -63,6 +67,8 @@ import ani.dantotsu.util.StoragePermissions.Companion.accessAlertDialog
 import ani.dantotsu.util.StoragePermissions.Companion.hasDirAccess
 import ani.dantotsu.util.customAlertDialog
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.chip.Chip
 import eu.kanade.tachiyomi.extension.manga.model.MangaExtension
 import eu.kanade.tachiyomi.source.ConfigurableSource
 import kotlinx.coroutines.CoroutineScope
@@ -238,27 +244,130 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
         updateChapters()
     }
 
-    fun multiDownload(n: Int) {
-        // Get last viewed chapter
-        val selected = media.userProgress
-        val chapters = media.manga?.chapters?.values?.toList()
-        // Filter by selected language
-        val progressChapterIndex = (chapters?.indexOfFirst {
-            MediaNameAdapter.findChapterNumber(it.number)?.toInt() == selected
-        } ?: 0) + 1
+    /**
+     * The highest chapter number the user has finished: AniList progress, or the locally
+     * tracked current chapter minus one (being inside a chapter doesn't finish it) —
+     * whichever is further.
+     */
+    private fun readUpTo(): Float {
+        val anilist = media.userProgress?.toFloat() ?: -1f
+        val local = PrefManager.getNullableCustomVal(
+            "${media.id}_current_chp", null, String::class.java
+        )?.let { MediaNameAdapter.findChapterNumber(it) }?.minus(1f) ?: -1f
+        return maxOf(anilist, local)
+    }
 
-        if (progressChapterIndex < 0 || n < 1 || chapters == null) return
-
-        // Calculate the end index
-        val endIndex = minOf(progressChapterIndex + n, chapters.size)
-
-        // Make sure there are enough chapters
-        val chaptersToDownload = chapters.subList(progressChapterIndex, endIndex)
-
-
-        for (chapter in chaptersToDownload) {
-            onMangaChapterDownloadClick(chapter)
+    /** Chapters past the read position, in reading order. Unparseable numbers count as unread. */
+    fun unreadChapters(): List<MangaChapter> {
+        val chapters = media.manga?.chapters?.values?.toList() ?: return emptyList()
+        val readUpTo = readUpTo()
+        return chapters.filter {
+            (MediaNameAdapter.findChapterNumber(it.number) ?: Float.MAX_VALUE) > readUpTo
         }
+    }
+
+    fun isChapterDownloaded(chapter: MangaChapter): Boolean =
+        MangaAutoDownloader.isDownloaded(media, chapter, downloadManager)
+
+    /** Queue the next [count] unread chapters (null = all unread), skipping ones already stored. */
+    fun downloadNext(count: Int?) {
+        val act = activity ?: return
+        fun go() {
+            val queue = unreadChapters()
+                .filterNot { isChapterDownloaded(it) }
+                .let { if (count != null) it.take(count) else it }
+            if (queue.isEmpty()) {
+                snackString(getString(R.string.no_chapters_to_download))
+                return
+            }
+            queue.forEach { onMangaChapterDownloadClick(it) }
+            snackString(getString(R.string.queued_chapters, queue.size))
+        }
+        // Ask for the download directory once up front instead of once per chapter.
+        if (!hasDirAccess(act)) {
+            (act as MediaDetailsActivity).accessAlertDialog(act.launcher) { success ->
+                if (success) go()
+                else snackString(getString(R.string.download_permission_required))
+            }
+        } else go()
+    }
+
+    /** Fill the auto-download buffer right away (used when the toggle is switched on). */
+    fun autoDownloadTopUp() {
+        val parser =
+            model.mangaReadSources?.get(media.selected!!.sourceIndex) as? DynamicMangaParser
+                ?: return
+        val upcoming = unreadChapters()
+        lifecycleScope.launch(Dispatchers.IO) {
+            MangaAutoDownloader.topUp(
+                requireContext().applicationContext, media, parser, upcoming, downloadManager
+            )
+        }
+    }
+
+    fun showDownloadSheet() {
+        val sheetBinding = BottomSheetMangaDownloadBinding.inflate(layoutInflater)
+        val sheet = BottomSheetDialog(requireContext())
+        sheet.setContentView(sheetBinding.root)
+
+        val pending = unreadChapters().filterNot { isChapterDownloaded(it) }
+        sheetBinding.downloadSheetSubtitle.text =
+            getString(R.string.download_sheet_subtitle, pending.size.toString())
+
+        fun addOption(label: String, count: Int?) {
+            val row = ItemDownloadOptionBinding.inflate(
+                layoutInflater, sheetBinding.downloadOptionsContainer, true
+            ).root
+            row.text = label
+            row.setOnClickListener {
+                sheet.dismiss()
+                downloadNext(count)
+            }
+        }
+        addOption(getString(R.string.download_next_chapter), 1)
+        listOf(5, 10, 25).forEach { addOption(getString(R.string.download_next_n, it), it) }
+        addOption(getString(R.string.download_all_unread, pending.size), null)
+
+        // Auto download: per-media ahead count, applied immediately (no save button).
+        val ranges = listOf(1, 5, 10, 25)
+        val current = MangaAutoDownloader.aheadCount(media.id)
+        sheetBinding.autoDownloadSwitch.isChecked = current > 0
+        sheetBinding.autoDownloadRangeContainer.isVisible = current > 0
+        ranges.forEach { n ->
+            val chip = ItemChipBinding.inflate(
+                layoutInflater, sheetBinding.autoDownloadChips, true
+            ).root
+            chip.isCheckable = true
+            chip.text = getString(R.string.chapters_ahead, n)
+            chip.setTextColor(
+                ContextCompat.getColorStateList(
+                    requireContext(), R.color.chip_text_checked_color
+                )
+            )
+            chip.isChecked = n == (if (current > 0) current else ranges.first())
+            chip.setOnClickListener {
+                MangaAutoDownloader.setAheadCount(media.id, n)
+                autoDownloadTopUp()
+            }
+        }
+        sheetBinding.autoDownloadSwitch.setOnCheckedChangeListener { _, checked ->
+            sheetBinding.autoDownloadRangeContainer.isVisible = checked
+            if (checked) {
+                val selected = ranges.getOrNull(
+                    (0 until sheetBinding.autoDownloadChips.childCount).indexOfFirst {
+                        (sheetBinding.autoDownloadChips.getChildAt(it) as Chip).isChecked
+                    }
+                ) ?: ranges.first()
+                MangaAutoDownloader.setAheadCount(media.id, selected)
+                snackString(getString(R.string.auto_download_enabled, selected))
+                autoDownloadTopUp()
+            } else {
+                MangaAutoDownloader.setAheadCount(media.id, 0)
+                snackString(getString(R.string.auto_download_disabled))
+            }
+        }
+
+        sheet.show()
     }
 
 

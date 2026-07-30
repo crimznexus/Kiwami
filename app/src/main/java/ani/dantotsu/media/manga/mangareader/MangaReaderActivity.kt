@@ -56,6 +56,9 @@ import ani.dantotsu.media.MediaSingleton
 import ani.dantotsu.media.manga.MangaCache
 import ani.dantotsu.media.manga.MangaChapter
 import ani.dantotsu.others.ImageViewDialog
+import ani.dantotsu.download.DownloadsManager
+import ani.dantotsu.download.manga.MangaAutoDownloader
+import ani.dantotsu.parsers.DynamicMangaParser
 import ani.dantotsu.parsers.HMangaSources
 import ani.dantotsu.parsers.MangaImage
 import ani.dantotsu.parsers.MangaSources
@@ -395,6 +398,19 @@ class MangaReaderActivity : AppCompatActivity() {
                 media.selected = model.loadSelected(media)
                 PrefManager.setCustomVal("${media.id}_current_chp", chap.number)
                 currentChapterIndex = chaptersArr.indexOf(chap.uniqueNumber())
+                // Keep the auto-download buffer sliding with the reader: entering a chapter
+                // means the previous one is done, so queue whatever keeps the next N stored.
+                lifecycleScope.launch(Dispatchers.IO) {
+                    val parser = model.mangaReadSources
+                        ?.get(media.selected!!.sourceIndex) as? DynamicMangaParser
+                        ?: return@launch
+                    val upcoming = chaptersArr.drop(currentChapterIndex + 1)
+                        .mapNotNull { chapters[it] }
+                    MangaAutoDownloader.topUp(
+                        applicationContext, media, parser, upcoming,
+                        Injekt.get<DownloadsManager>()
+                    )
+                }
                 binding.mangaReaderChapterSelect.setSelection(currentChapterIndex)
                 if (directionRLBT) {
                     binding.mangaReaderNextChap.text =

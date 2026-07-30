@@ -7,11 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
-import android.widget.NumberPicker
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getString
 import androidx.core.content.ContextCompat.startActivity
@@ -200,6 +197,13 @@ class MangaReadAdapter(
             openSettings(fragment.requireContext(), CHANNEL_SUBSCRIPTION_CHECK)
         }
 
+        // Chapter downloads live behind their own button (range picker + auto download)
+        // instead of the old type-a-number field in the Options dialog.
+        binding.mediaSourceDownload.isVisible = !offline
+        binding.mediaSourceDownload.setOnClickListener {
+            fragment.showDownloadSheet()
+        }
+
         binding.mediaNestedButton.setOnClickListener {
             val dialogBinding = DialogLayoutBinding.inflate(fragment.layoutInflater)
             var refresh = false
@@ -266,28 +270,8 @@ class MangaReadAdapter(
                     }
                 }
 
-                // Multi download
-                //downloadNo.text = "0"
-                mediaDownloadTop.setOnClickListener {
-                    fragment.requireContext().customAlertDialog().apply {
-                        setTitle("Multi Chapter Downloader")
-                        setMessage("Enter the number of chapters to download")
-                        val input = View.inflate(currContext(), R.layout.dialog_layout, null)
-                        val editText = input.findViewById<EditText>(R.id.downloadNo)
-                        setCustomView(input)
-                        setPosButton(R.string.ok) {
-                            val value = editText.text.toString().toIntOrNull()
-                            if (value != null && value > 0) {
-                                downloadNo.setText(value.toString(), TextView.BufferType.EDITABLE)
-                                fragment.multiDownload(value)
-                            } else {
-                                toast("Please enter a valid number")
-                            }
-                        }
-                        setNegButton(R.string.cancel)
-                        show()
-                    }
-                }
+                // Downloads moved to the dedicated sheet on the header's download button.
+                animeDownloadContainer.isVisible = false
                 resetProgress.setOnClickListener {
                     fragment.requireContext().customAlertDialog().apply {
                         setTitle(" Delete Progress for all chapters of ${media.nameRomaji}")
@@ -387,10 +371,6 @@ class MangaReadAdapter(
                     setCustomView(root)
                     setPosButton("OK") {
                         if (run) fragment.onIconPressed(style, reversed)
-                        val value = downloadNo.text.toString().toIntOrNull()
-                        if (value != null && value > 0) {
-                            fragment.multiDownload(value)
-                        }
                         if (refresh) fragment.loadChapters(source, true)
                     }
                     setNegButton("Cancel") {

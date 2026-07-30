@@ -68,8 +68,13 @@ fun GlassSettingsOverlay(
     val isLightTheme = !isSystemInDarkTheme()
     val contentColor = if (isLightTheme) Color.Black else Color.White
     val accentColor = if (isLightTheme) Color(0xFF0088FF) else Color(0xFF0091FF)
-    val containerColor = if (isLightTheme) Color(0xFFFAFAFA).copy(0.6f) else Color(0xFF121212).copy(0.4f)
-    val dimColor = Color.Transparent // No dimming
+    // The panel sits over whatever the home screen is showing — cover art, banners, dense
+    // text. At the 0.4 alpha this used to run at, all of that read straight through and the
+    // menu looked like it was overlapping the content rather than sitting above it.
+    val containerColor =
+        if (isLightTheme) Color(0xFFFAFAFA).copy(0.94f) else Color(0xFF121212).copy(0.92f)
+    // Scrim behind the panel, so the backdrop recedes instead of competing with the menu.
+    val dimColor = Color.Black.copy(if (isLightTheme) 0.32f else 0.45f)
     
     val context = LocalContext.current
     var isIncognito by remember { mutableStateOf(PrefManager.getVal<Boolean>(PrefName.Incognito)) }
@@ -85,11 +90,12 @@ fun GlassSettingsOverlay(
         }
     }
     
-    // Clickable background to dismiss (outside animation)
+    // Clickable scrim to dismiss (outside animation)
     if (visible) {
         Box(
             Modifier
                 .fillMaxSize()
+                .background(dimColor)
                 .clickable { onDismiss() }
         )
     }
@@ -133,8 +139,10 @@ fun GlassSettingsOverlay(
                                 brightness = if (isLightTheme) 0.2f else 0f,
                                 saturation = 1.3f // Slightly reduced
                             )
-                            blur(if (isLightTheme) 5.dp.toPx() else 8.dp.toPx()) // Reduced blur
-                            lens(16.dp.toPx(), 32.dp.toPx(), depthEffect = true) // Reduced lens effect
+                            // Enough blur that whatever survives the panel fill reads as
+                            // texture behind glass rather than as legible content.
+                            blur(if (isLightTheme) 20.dp.toPx() else 24.dp.toPx())
+                            lens(16.dp.toPx(), 32.dp.toPx(), depthEffect = true)
                         },
                         highlight = { Highlight.Plain },
                         onDrawSurface = { drawRect(containerColor) }

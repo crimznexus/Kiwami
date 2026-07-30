@@ -33,18 +33,19 @@
         <item name="shapeAppearance">@style/ShapeAppearanceOverlay.Demo</item>
     </style>
 
-    <!-- Liquid Glass BottomSheet Theme -->
-    <style name="TransparentBottomSheetDialog" parent="Theme.MaterialComponents.Light.BottomSheetDialog">
+    <!-- Liquid Glass BottomSheet Theme. DayNight parent: the Light one forced light
+         scrim/handle colours even in dark mode. The dim is set in code, because how much
+         is needed depends on whether the system actually grants us a blur behind. -->
+    <style name="TransparentBottomSheetDialog" parent="Theme.MaterialComponents.DayNight.BottomSheetDialog">
         <item name="bottomSheetStyle">@style/LiquidGlassBottomSheetStyle</item>
-        <item name="android:backgroundDimAmount">0</item>
         <item name="android:windowIsFloating">false</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
 
     <style name="LiquidGlassBottomSheetStyle" parent="Widget.MaterialComponents.BottomSheet.Modal">
-        <!-- iOS-style Frosted Glass: Light semi-transparent white -->
-        <!-- #FAFAFA at 85% opacity for frosted look -->
-        <item name="backgroundTint">#D9FAFAFA</item>
+        <!-- Frosted, but opaque enough to stand on its own: code may refine this, and if it
+             cannot, the sheet still has to be readable over cover art rather than clear. -->
+        <item name="backgroundTint">?android:attr/colorBackground</item>
         <item name="shapeAppearance">@style/LiquidGlassShapeAppearance</item>
     </style>
 

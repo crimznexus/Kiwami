@@ -401,14 +401,17 @@
         <item name="colorOnError">#B71C1C</item>
         <item name="colorOnErrorContainer">#C62828</item>
         
-        <!-- Background - Semi-transparent frosted -->
-        <item name="android:colorBackground">#F0FAFAFA</item>
+        <!-- Background and surfaces are opaque on purpose. These attributes paint every
+             sheet, dialog, card and app bar in the app; when they carried alpha, all of
+             those let whatever was behind them read straight through and the UI looked
+             like it was overlapping itself. The glass effect belongs to the components
+             that actually sample and blur a backdrop, not to the base palette. -->
+        <item name="android:colorBackground">#FAFAFA</item>
         <item name="colorOnBackground">#212121</item>
-        
-        <!-- Surface - Glass-like translucent -->
-        <item name="colorSurface">#E6FFFFFF</item>
+
+        <item name="colorSurface">#FFFFFF</item>
         <item name="colorOnSurface">#212121</item>
-        <item name="colorSurfaceVariant">#D9E3F2FD</item>
+        <item name="colorSurfaceVariant">#E3F2FD</item>
         <item name="colorOnSurfaceVariant">#37474F</item>
         
         <!-- Outline - Subtle glass edge -->

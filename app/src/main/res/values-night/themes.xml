@@ -327,14 +327,15 @@
         <item name="colorOnError">#4E0002</item>
         <item name="colorOnErrorContainer">#FFCDD2</item>
 
-        <!-- Background - dark frosted -->
-        <item name="android:colorBackground">#F0121212</item>
+        <!-- Opaque on purpose: these attributes paint every sheet, dialog, card and app
+             bar, so alpha here made all of them see-through and the UI read as overlapping.
+             Glass belongs to the components that blur a real backdrop, not the palette. -->
+        <item name="android:colorBackground">#121212</item>
         <item name="colorOnBackground">#EEEEEE</item>
 
-        <!-- Surface - dark glass translucent -->
-        <item name="colorSurface">#E61E1E1E</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorOnSurface">#E0E0E0</item>
-        <item name="colorSurfaceVariant">#D9263238</item>
+        <item name="colorSurfaceVariant">#263238</item>
         <item name="colorOnSurfaceVariant">#B0BEC5</item>
 
         <!-- Outline - subtle glass edge -->

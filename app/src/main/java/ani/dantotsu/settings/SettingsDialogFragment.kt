@@ -37,8 +37,10 @@ import java.util.Timer
 import kotlin.concurrent.schedule
 import android.view.WindowManager
 import android.os.Build
+import android.util.TypedValue
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.ColorDrawable
+import androidx.core.graphics.ColorUtils
 
 
 
@@ -79,15 +81,13 @@ class SettingsDialogFragment : BottomSheetDialogFragment() {
         val isLiquidGlassTheme = PrefManager.getVal<String>(PrefName.Theme) == "LIQUID_GLASS"
 
         if (isLiquidGlassTheme) {
-            // Window transparency and dim settings - the actual glass effect is in onStart()
+            // Window transparency only; the frosted fill and dim are set in onStart(), which
+            // is where we can tell whether the system will actually blur behind us.
             window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            window?.setDimAmount(0f)
         } else {
             binding.settingsContainer.setBackgroundResource(R.drawable.bottom_sheet_background)
         }
 
-
-        window?.statusBarColor = Color.CYAN
         window?.navigationBarColor =
             requireContext().getThemeColor(com.google.android.material.R.attr.colorSurface)
         val notificationIcon = if (Anilist.unreadNotificationCount > 0) {
@@ -214,24 +214,56 @@ class SettingsDialogFragment : BottomSheetDialogFragment() {
     override fun onStart() {
         super.onStart()
         val isLiquidGlassTheme = PrefManager.getVal<String>(PrefName.Theme) == "LIQUID_GLASS"
-        
-        // Get the BottomSheet container
-        val sheet = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        
-        if (isLiquidGlassTheme && sheet != null) {
-            sheet.background = ColorDrawable(Color.TRANSPARENT)
 
-            // Native Window Blur for Android 12+ (API 31+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                dialog?.window?.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                dialog?.window?.attributes?.blurBehindRadius = 64
-                dialog?.window?.attributes = dialog?.window?.attributes
+        if (isLiquidGlassTheme) {
+            // Cross-window blur is a privilege the system grants, not a flag we can rely on:
+            // it needs API 31+ and is switched off on low-end devices, in battery saver, and
+            // on most emulators. Asking first matters, because a 60%-transparent panel with
+            // no blur behind it just shows the home screen straight through the menu.
+            val blurred = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                    requireContext().getSystemService(WindowManager::class.java)
+                        ?.isCrossWindowBlurEnabled == true
+
+            dialog?.window?.let { w ->
+                if (blurred) {
+                    w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    w.attributes = w.attributes.apply { blurBehindRadius = BLUR_RADIUS }
+                }
+                // A real blur separates the layers on its own; without one the scrim has to
+                // do that work, so it goes darker.
+                w.setDimAmount(if (blurred) DIM_WITH_BLUR else DIM_WITHOUT_BLUR)
             }
 
-            // Use colorSurface with 60% alpha for glass effect (same as bottom bar overlay)
-            val surfaceColor = requireContext().getThemeColor(com.google.android.material.R.attr.colorSurface)
-            val glassColor = Color.argb(153, Color.red(surfaceColor), Color.green(surfaceColor), Color.blue(surfaceColor)) // 60% alpha
-            binding.settingsContainer.setBackgroundColor(glassColor)
+            val surface =
+                requireContext().getThemeColor(com.google.android.material.R.attr.colorSurface)
+            val outline =
+                requireContext().getThemeColor(com.google.android.material.R.attr.colorOutline)
+            val radius = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 28f, resources.displayMetrics
+            )
+            // Applied to the fragment's own root rather than the dialog's internal
+            // design_bottom_sheet view, which we may or may not be handed depending on how
+            // the sheet was themed — this one we always have.
+            binding.root.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                // Top corners only — the sheet sits flush against the bottom edge.
+                cornerRadii = floatArrayOf(
+                    radius, radius, radius, radius, 0f, 0f, 0f, 0f
+                )
+                setColor(
+                    ColorUtils.setAlphaComponent(
+                        surface, if (blurred) FILL_ALPHA_WITH_BLUR else FILL_ALPHA_WITHOUT_BLUR
+                    )
+                )
+                // Hairline edge so the panel reads as a distinct surface rather than a
+                // washed-out patch of whatever is behind it.
+                setStroke(
+                    TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics
+                    ).toInt(),
+                    ColorUtils.setAlphaComponent(outline, 90)
+                )
+            }
         }
     }
 
@@ -241,6 +273,15 @@ class SettingsDialogFragment : BottomSheetDialogFragment() {
     }
 
     companion object {
+        // Glass has to stay readable over whatever the home screen happens to be showing —
+        // cover art, bright banners, dense text. Anything much below these values lets that
+        // content read straight through the menu instead of sitting behind it.
+        private const val BLUR_RADIUS = 64
+        private const val DIM_WITH_BLUR = 0.4f
+        private const val DIM_WITHOUT_BLUR = 0.55f
+        private const val FILL_ALPHA_WITH_BLUR = 246    // 96%
+        private const val FILL_ALPHA_WITHOUT_BLUR = 252 // 99%
+
         enum class PageType {
             MANGA, ANIME, HOME, OfflineMANGA, OfflineANIME, OfflineHOME
         }

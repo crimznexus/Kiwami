@@ -46,6 +46,7 @@ import ani.dantotsu.setSafeOnClickListener
 import ani.dantotsu.settings.AdultContent
 import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
+import ani.dantotsu.util.TvUtils
 import com.xwray.groupie.GroupieAdapter
 import io.noties.markwon.Markwon
 import io.noties.markwon.SoftBreakAddsNewLinePlugin
@@ -90,6 +91,14 @@ class MediaInfoFragment : Fragment() {
 
         model.scrolledToTop.observe(viewLifecycleOwner) {
             if (it) binding.mediaInfoScroll.scrollTo(0, 0)
+        }
+
+        // Nothing on this page takes focus, so a remote's up/down went nowhere. Making the
+        // scroller itself focusable gives NestedScrollView the key events it needs to page
+        // through the synopsis; descendants still win focus once the user reaches a card.
+        if (TvUtils.isTv(requireContext())) {
+            binding.mediaInfoScroll.isFocusable = true
+            binding.mediaInfoScroll.isFocusableInTouchMode = false
         }
 
         model.getMedia().observe(viewLifecycleOwner) { media ->

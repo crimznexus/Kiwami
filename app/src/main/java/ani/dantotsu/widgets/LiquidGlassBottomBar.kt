@@ -448,6 +448,9 @@ class LiquidGlassBottomBar @JvmOverloads constructor(
         selectedIndex = 0
     }
     
+    val tabCount: Int
+        get() = tabs.size
+
     val selectedTab: Tab?
         get() {
             val idx = selectedIndex

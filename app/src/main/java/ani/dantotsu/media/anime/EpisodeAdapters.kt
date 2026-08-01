@@ -21,6 +21,7 @@ import ani.dantotsu.media.MediaNameAdapter
 import ani.dantotsu.media.MediaType
 import ani.dantotsu.setAnimation
 import ani.dantotsu.settings.saving.PrefManager
+import ani.dantotsu.util.TvUtils.tvFocusable
 import ani.dantotsu.util.customAlertDialog
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.model.GlideUrl
@@ -284,6 +285,7 @@ class EpisodeAdapter(
     inner class EpisodeCompactViewHolder(val binding: ItemEpisodeCompactBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
+            itemView.tvFocusable()
             itemView.setOnClickListener {
                 if (bindingAdapterPosition < arr.size && bindingAdapterPosition >= 0)
                     fragment.onEpisodeClick(arr[bindingAdapterPosition].number)
@@ -294,6 +296,7 @@ class EpisodeAdapter(
     inner class EpisodeGridViewHolder(val binding: ItemEpisodeGridBinding) :
         RecyclerView.ViewHolder(binding.root) {
         init {
+            itemView.tvFocusable()
             itemView.setOnClickListener {
                 if (bindingAdapterPosition < arr.size && bindingAdapterPosition >= 0)
                     fragment.onEpisodeClick(arr[bindingAdapterPosition].number)
@@ -306,6 +309,7 @@ class EpisodeAdapter(
         private val activeCoroutines = mutableSetOf<String>()
 
         init {
+            itemView.tvFocusable()
             itemView.setOnClickListener {
                 if (bindingAdapterPosition < arr.size && bindingAdapterPosition >= 0)
                     fragment.onEpisodeClick(arr[bindingAdapterPosition].number)

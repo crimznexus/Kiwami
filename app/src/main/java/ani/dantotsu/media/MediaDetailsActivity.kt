@@ -7,6 +7,7 @@ import android.content.res.Configuration
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.view.GestureDetector
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -55,6 +56,7 @@ import ani.dantotsu.snackString
 import ani.dantotsu.statusBarHeight
 import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.util.LauncherWrapper
+import ani.dantotsu.util.TvUtils
 import com.flaviofaria.kenburnsview.RandomTransitionGenerator
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.CoroutineScope
@@ -76,6 +78,11 @@ class MediaDetailsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLi
     lateinit var navBar: LiquidGlassBottomBar
     var anime = true
     private var adult = false
+
+    private val isTv by lazy { TvUtils.isTv(this) }
+
+    /** Applies a tab change from anywhere — the bar's own listener, or the remote. */
+    private var onTabChosen: ((Int) -> Unit)? = null
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -393,6 +400,14 @@ class MediaDetailsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLi
         }
         binding.commentInputLayout.isVisible = selected == 2
         navBar.selectTabAt(selected)
+        onTabChosen = { newIndex ->
+            selected = newIndex
+            binding.commentInputLayout.isVisible = selected == 2
+            viewPager.setCurrentItem(selected, true)
+            val sel = model.loadSelected(media, isDownload)
+            sel.window = selected
+            model.saveSelected(media.id, sel)
+        }
         navBar.setOnTabSelectListener(object : LiquidGlassBottomBar.OnTabSelectListener {
             override fun onTabSelected(
                 lastIndex: Int,
@@ -400,14 +415,19 @@ class MediaDetailsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLi
                 newIndex: Int,
                 newTab: LiquidGlassBottomBar.Tab
             ) {
-                selected = newIndex
-                binding.commentInputLayout.isVisible = selected == 2
-                viewPager.setCurrentItem(selected, true)
-                val sel = model.loadSelected(media, isDownload)
-                sel.window = selected
-                model.saveSelected(media.id, sel)
+                onTabChosen?.invoke(newIndex)
             }
         })
+
+        // The marquee title steals first focus and then swallows up/down, leaving the page
+        // unscrollable. Send focus to the content instead; see dispatchKeyEvent for how
+        // the tab bar is reached.
+        if (isTv) {
+            binding.mediaTitle.isFocusableInTouchMode = false
+            binding.mediaTitleCollapse.isFocusableInTouchMode = false
+            binding.mediaTitle.isFocusable = false
+            binding.mediaTitleCollapse.isFocusable = false
+        }
 
         val live = Refresh.activity.getOrPut(this.hashCode()) { MutableLiveData(true) }
         live.observe(this) {
@@ -418,6 +438,57 @@ class MediaDetailsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLi
                 }
             }
         }
+    }
+
+    /**
+     * Remote navigation for the details screen.
+     *
+     * The tab bar floats over the pager instead of sitting in the layout flow, so ordinary
+     * focus search never reaches it — which left a remote with no way to get from Info to
+     * Episodes. Left and right therefore page between the tabs outright. The only other
+     * claim on those keys here is a horizontally scrolling row (characters, relations),
+     * so that case defers and everything else switches tab. Off TV this is inert.
+     */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (isTv && event.action == KeyEvent.ACTION_DOWN && ::navBar.isInitialized) {
+            when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    if (!focusIsInHorizontalList()) {
+                        val step = if (event.keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) 1 else -1
+                        switchTab(step)
+                        return true
+                    }
+                }
+            }
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    private fun switchTab(step: Int) {
+        val next = (selected + step).coerceIn(0, navBar.tabCount - 1)
+        if (next == selected) return
+        navBar.selectTabAt(next)
+        onTabChosen?.invoke(next)
+    }
+
+    /**
+     * True when the focused view sits inside something that scrolls sideways, which has a
+     * better claim on left/right than the tab bar does.
+     */
+    private fun focusIsInHorizontalList(): Boolean {
+        val pager = binding.mediaViewPager
+        var view: View? = currentFocus
+        while (view != null && view !== pager) {
+            // ViewPager2 pages sideways through an inner RecyclerView of its own, and that
+            // is usually what holds focus here. Counting it would make every key look like
+            // it belonged to a sideways list, so the pager and its direct child are skipped
+            // and only lists inside a page get a say.
+            if (view.parent !== pager &&
+                (view.canScrollHorizontally(-1) || view.canScrollHorizontally(1))
+            ) return true
+            view = view.parent as? View
+        }
+        return false
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

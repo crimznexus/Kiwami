@@ -25,6 +25,7 @@ import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.statusBarHeight
 import ani.dantotsu.themes.ThemeManager
+import ani.dantotsu.util.TvUtils
 import ani.dantotsu.util.customAlertDialog
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -68,21 +69,22 @@ class ExtensionsActivity : AppCompatActivity() {
         val viewPager = findViewById<ViewPager2>(R.id.viewPager)
         viewPager.offscreenPageLimit = 1
 
-        viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun getItemCount(): Int = 6
-
-            override fun createFragment(position: Int): Fragment {
-                return when (position) {
-                    0 -> InstalledAnimeExtensionsFragment()
-                    1 -> AnimeExtensionsFragment()
-                    2 -> InstalledMangaExtensionsFragment()
-                    3 -> MangaExtensionsFragment()
-                    4 -> InstalledNovelExtensionsFragment()
-                    5 -> NovelExtensionsFragment()
-                    else -> AnimeExtensionsFragment()
-                }
+        // TV builds have no manga tab, so their extensions have nothing to install into.
+        val tabs = buildList {
+            add("Installed Anime" to { InstalledAnimeExtensionsFragment() as Fragment })
+            add("Available Anime" to { AnimeExtensionsFragment() as Fragment })
+            if (TvUtils.supportsManga(this@ExtensionsActivity)) {
+                add("Installed Manga" to { InstalledMangaExtensionsFragment() as Fragment })
+                add("Available Manga" to { MangaExtensionsFragment() as Fragment })
             }
+            add("Installed Novels" to { InstalledNovelExtensionsFragment() as Fragment })
+            add("Available Novels" to { NovelExtensionsFragment() as Fragment })
+        }
 
+        viewPager.adapter = object : FragmentStateAdapter(this) {
+            override fun getItemCount(): Int = tabs.size
+
+            override fun createFragment(position: Int): Fragment = tabs[position].second()
         }
 
         val searchView: AutoCompleteTextView = findViewById(R.id.searchViewText)
@@ -128,15 +130,7 @@ class ExtensionsActivity : AppCompatActivity() {
         )
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            tab.text = when (position) {
-                0 -> "Installed Anime"
-                1 -> "Available Anime"
-                2 -> "Installed Manga"
-                3 -> "Available Manga"
-                4 -> "Installed Novels"
-                5 -> "Available Novels"
-                else -> null
-            }
+            tab.text = tabs[position].first
         }.attach()
 
 

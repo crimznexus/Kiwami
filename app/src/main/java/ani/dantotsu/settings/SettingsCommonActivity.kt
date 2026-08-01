@@ -36,6 +36,7 @@ import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.toast
 import ani.dantotsu.util.LauncherWrapper
 import ani.dantotsu.util.StoragePermissions
+import ani.dantotsu.util.TvUtils
 import ani.dantotsu.util.customAlertDialog
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -432,11 +433,14 @@ class SettingsCommonActivity : AppCompatActivity() {
                 layoutManager = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
                 setHasFixedSize(true)
             }
+            // Manga isn't a destination on TV, so it can't be a start-up one either.
+            val mangaEnabled = TvUtils.supportsManga(context)
+            uiSettingsManga.isVisible = mangaEnabled
+
             var previousStart: View =
                 when (PrefManager.getVal<Int>(PrefName.DefaultStartUpTab)) {
                     0 -> uiSettingsAnime
-                    1 -> uiSettingsHome
-                    2 -> uiSettingsManga
+                    2 -> if (mangaEnabled) uiSettingsManga else uiSettingsHome
                     else -> uiSettingsHome
                 }
             previousStart.alpha = 1f

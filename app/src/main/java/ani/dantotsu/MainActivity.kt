@@ -64,6 +64,7 @@ import ani.dantotsu.settings.saving.internal.PreferencePackager
 import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.util.AudioHelper
 import ani.dantotsu.util.Logger
+import ani.dantotsu.util.TvUtils
 import ani.dantotsu.util.customAlertDialog
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
@@ -283,6 +284,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 PrefManager.getVal(PrefName.DefaultStartUpTab)
             }
+            // Without manga there is no third page, and a saved start-up tab of 2 would land
+            // the pager out of bounds.
+            val mangaEnabled = TvUtils.supportsManga(this)
+            val pageCount = if (mangaEnabled) 3 else 2
+            if (selectedOption >= pageCount) selectedOption = 1
             binding.mainProgressBar.visibility = View.GONE
             
             // Check if Liquid Glass theme is active
@@ -297,7 +303,7 @@ class MainActivity : AppCompatActivity() {
                 binding.composeMainContent.setContent {
                     val pagerState = rememberPagerState(
                         initialPage = selectedOption,
-                        pageCount = { 3 }
+                        pageCount = { pageCount }
                     )
                     val coroutineScope = rememberCoroutineScope()
                     val backdrop = rememberLayerBackdrop() // Shared backdrop for glass effect
@@ -344,7 +350,7 @@ class MainActivity : AppCompatActivity() {
                                 }
                             },
                             backdrop = backdrop, // Use the captured content
-                            tabsCount = 3,
+                            tabsCount = pageCount,
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
                                 .padding(
@@ -381,16 +387,18 @@ class MainActivity : AppCompatActivity() {
                                 )
                             }
 
-                            LiquidBottomTab(onClick = {
-                                selectedIndex = 2
-                                selectedOption = 2
-                                coroutineScope.launch { pagerState.scrollToPage(2) }
-                            }) {
-                                Icon(
-                                    painterResource(R.drawable.ic_round_import_contacts_24),
-                                    contentDescription = stringResource(R.string.manga),
-                                    modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
-                                )
+                            if (mangaEnabled) {
+                                LiquidBottomTab(onClick = {
+                                    selectedIndex = 2
+                                    selectedOption = 2
+                                    coroutineScope.launch { pagerState.scrollToPage(2) }
+                                }) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_round_import_contacts_24),
+                                        contentDescription = stringResource(R.string.manga),
+                                        modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                                    )
+                                }
                             }
                         }
 
@@ -417,13 +425,17 @@ class MainActivity : AppCompatActivity() {
                 val navbar = binding.includedNavbar.navbar
                 
                 mainViewPager.isUserInputEnabled = false
-                mainViewPager.adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)
+                mainViewPager.adapter = ViewPagerAdapter(supportFragmentManager, lifecycle, pageCount)
                 mainViewPager.setPageTransformer(ZoomOutPageTransformer())
 
                 navbar.clearTabs()
                 navbar.addTab(navbar.createTab(R.drawable.ic_round_movie_filter_24, R.string.anime))
                 navbar.addTab(navbar.createTab(R.drawable.ic_round_home_24, R.string.home))
-                navbar.addTab(navbar.createTab(R.drawable.ic_round_import_contacts_24, R.string.manga))
+                if (mangaEnabled) {
+                    navbar.addTab(
+                        navbar.createTab(R.drawable.ic_round_import_contacts_24, R.string.manga)
+                    )
+                }
                 navbar.setOnTabSelectListener(object : LiquidGlassBottomBar.OnTabSelectListener {
                     override fun onTabSelected(
                         oldIndex: Int,
@@ -697,10 +709,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     //ViewPager
-    private class ViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
-        FragmentStateAdapter(fragmentManager, lifecycle) {
+    private class ViewPagerAdapter(
+        fragmentManager: FragmentManager,
+        lifecycle: Lifecycle,
+        private val pages: Int
+    ) : FragmentStateAdapter(fragmentManager, lifecycle) {
 
-        override fun getItemCount(): Int = 3
+        override fun getItemCount(): Int = pages
 
         override fun createFragment(position: Int): Fragment {
             when (position) {

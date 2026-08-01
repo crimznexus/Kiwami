@@ -50,6 +50,7 @@ import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.snackString
 import ani.dantotsu.statusBarHeight
 import ani.dantotsu.util.Logger
+import ani.dantotsu.util.TvUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -120,7 +121,7 @@ class HomeFragment : Fragment() {
                 binding.homeUserDataContainer.layoutAnimation =
                     LayoutAnimationController(setSlideUp(), 0.25f)
                 binding.homeAnimeList.visibility = View.VISIBLE
-                binding.homeMangaList.visibility = View.VISIBLE
+                binding.homeMangaList.isVisible = TvUtils.supportsManga(requireContext())
                 binding.homeListContainer.layoutAnimation =
                     LayoutAnimationController(setSlideIn(), 0.25f)
             }
@@ -501,9 +502,13 @@ class HomeFragment : Fragment() {
                     var empty = true
                     val homeLayoutShow: List<Boolean> = PrefManager.getVal(PrefName.HomeLayout)
 
+                    // Indices 3-5 are the manga rows; a TV build has no reader to send them to.
+                    val mangaRows = if (TvUtils.supportsManga(requireContext())) emptySet()
+                    else setOf(3, 4, 5)
+
                     withContext(Dispatchers.Main) {
                         homeLayoutShow.indices.forEach { i ->
-                            if (homeLayoutShow.elementAt(i)) {
+                            if (homeLayoutShow.elementAt(i) && i !in mangaRows) {
                                 empty = false
                             } else {
                                 containers[i].visibility = View.GONE

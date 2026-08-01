@@ -34,6 +34,7 @@ import ani.dantotsu.startMainActivity
 import ani.dantotsu.statusBarHeight
 import ani.dantotsu.themes.ThemeManager
 import ani.dantotsu.toast
+import ani.dantotsu.util.TvUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -173,7 +174,12 @@ class SettingsActivity : AppCompatActivity() {
                         },
                         isActivity = true
                     )
-                )
+                ).apply {
+                    // Nothing to configure when the reader isn't reachable in the first place.
+                    if (!TvUtils.supportsManga(context)) {
+                        removeAll { it.name == getString(R.string.manga) }
+                    }
+                }
             )
 
             settingsRecyclerView.apply {

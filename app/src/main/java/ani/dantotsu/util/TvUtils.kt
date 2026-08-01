@@ -31,6 +31,16 @@ object TvUtils {
     }
 
     /**
+     * Whether the reading half of the app is offered at all.
+     *
+     * Manga is a hold-it-in-your-hands feature: page-at-a-time panning, pinch zoom and long
+     * reading sessions all assume a device you can touch and hold close. None of that
+     * survives a remote and a couch, so on TV the tab, its settings, its extensions and its
+     * home rows are all dropped rather than shipped as dead ends.
+     */
+    fun supportsManga(context: Context): Boolean = !isTv(context)
+
+    /**
      * Make [view] reachable and obviously selected with a D-pad. A remote has no cursor, so
      * the focused item has to announce itself: this lifts and enlarges it, which is the
      * convention TV users already read as "this is what Select will open".

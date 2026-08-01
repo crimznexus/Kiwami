@@ -29,6 +29,7 @@ import ani.dantotsu.settings.saving.PrefManager
 import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.snackString
 import ani.dantotsu.themes.ThemeManager
+import ani.dantotsu.util.TvUtils
 import ani.dantotsu.widgets.LiquidBottomTabs
 import ani.dantotsu.widgets.LiquidBottomTab
 import ani.dantotsu.widgets.LiquidBottomBarMetrics
@@ -90,13 +91,19 @@ class NoInternet : AppCompatActivity() {
 
         binding.root.doOnAttach {
             initActivity(this)
-            selectedOption = PrefManager.getVal(PrefName.DefaultStartUpTab)
-
+            val startUpTab: Int = PrefManager.getVal(PrefName.DefaultStartUpTab)
+            // A saved manga tab has nowhere to go on a TV build; fall back to home.
+            selectedOption =
+                if (startUpTab >= 2 && !TvUtils.supportsManga(this)) 1 else startUpTab
         }
 
         // Check if Liquid Glass theme is active
         val isLiquidGlassTheme = PrefManager.getVal<String>(PrefName.Theme) == "LIQUID_GLASS"
-        
+
+        val mangaEnabled = TvUtils.supportsManga(this)
+        val pageCount = if (mangaEnabled) 3 else 2
+        if (selectedOption >= pageCount) selectedOption = 1
+
         if (isLiquidGlassTheme) {
             // Use Compose HorizontalPager for Liquid Glass theme
             binding.viewpager.visibility = View.GONE
@@ -106,7 +113,7 @@ class NoInternet : AppCompatActivity() {
             binding.composeMainContent.setContent {
                 val pagerState = rememberPagerState(
                     initialPage = selectedOption,
-                    pageCount = { 3 }
+                    pageCount = { pageCount }
                 )
                 val coroutineScope = rememberCoroutineScope()
                 val backdrop = rememberLayerBackdrop()
@@ -142,7 +149,7 @@ class NoInternet : AppCompatActivity() {
                             coroutineScope.launch { pagerState.scrollToPage(index) }
                         },
                         backdrop = backdrop,
-                        tabsCount = 3,
+                        tabsCount = pageCount,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(
@@ -174,15 +181,17 @@ class NoInternet : AppCompatActivity() {
                             )
                         }
 
-                        LiquidBottomTab(onClick = {
-                            selectedOption = 2
-                            coroutineScope.launch { pagerState.scrollToPage(2) }
-                        }) {
-                            Icon(
-                                painterResource(R.drawable.ic_round_import_contacts_24),
-                                contentDescription = stringResource(R.string.manga),
-                                modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
-                            )
+                        if (mangaEnabled) {
+                            LiquidBottomTab(onClick = {
+                                selectedOption = 2
+                                coroutineScope.launch { pagerState.scrollToPage(2) }
+                            }) {
+                                Icon(
+                                    painterResource(R.drawable.ic_round_import_contacts_24),
+                                    contentDescription = stringResource(R.string.manga),
+                                    modifier = Modifier.size(LiquidBottomBarMetrics.IconSize)
+                                )
+                            }
                         }
                     }
                 }
@@ -197,13 +206,17 @@ class NoInternet : AppCompatActivity() {
             val navbar = binding.includedNavbar.navbar
             
             mainViewPager.isUserInputEnabled = false
-            mainViewPager.adapter = ViewPagerAdapter(supportFragmentManager, lifecycle)
+            mainViewPager.adapter = ViewPagerAdapter(supportFragmentManager, lifecycle, pageCount)
             mainViewPager.setPageTransformer(ZoomOutPageTransformer())
 
             navbar.clearTabs()
             navbar.addTab(navbar.createTab(R.drawable.ic_round_movie_filter_24, R.string.anime))
             navbar.addTab(navbar.createTab(R.drawable.ic_round_home_24, R.string.home))
-            navbar.addTab(navbar.createTab(R.drawable.ic_round_import_contacts_24, R.string.manga))
+            if (mangaEnabled) {
+                navbar.addTab(
+                    navbar.createTab(R.drawable.ic_round_import_contacts_24, R.string.manga)
+                )
+            }
             navbar.setOnTabSelectListener(object : LiquidGlassBottomBar.OnTabSelectListener {
                 override fun onTabSelected(
                     oldIndex: Int,
@@ -226,10 +239,13 @@ class NoInternet : AppCompatActivity() {
     }
 
 
-    private class ViewPagerAdapter(fragmentManager: FragmentManager, lifecycle: Lifecycle) :
-        FragmentStateAdapter(fragmentManager, lifecycle) {
+    private class ViewPagerAdapter(
+        fragmentManager: FragmentManager,
+        lifecycle: Lifecycle,
+        private val pages: Int
+    ) : FragmentStateAdapter(fragmentManager, lifecycle) {
 
-        override fun getItemCount(): Int = 3
+        override fun getItemCount(): Int = pages
 
         override fun createFragment(position: Int): Fragment {
             return when (position) {

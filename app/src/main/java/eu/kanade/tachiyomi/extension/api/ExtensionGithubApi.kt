@@ -14,16 +14,21 @@ import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.parseAs
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import org.json.JSONArray
 import org.json.JSONObject
 import tachiyomi.core.util.lang.withIOContext
 import uy.kohesive.injekt.injectLazy
+import java.util.zip.GZIPInputStream
 
 internal class ExtensionGithubApi {
     private val networkService: NetworkHelper by injectLazy()
     private val json: Json by injectLazy()
+    private val lenientJson = Json { ignoreUnknownKeys = true }
 
     private fun List<ExtensionSourceJsonObject>.toAnimeExtensionSources(): List<AvailableAnimeSources> {
         return this.map {
@@ -77,33 +82,9 @@ internal class ExtensionGithubApi {
                 PrefManager.getVal<Set<String>>(PrefName.AnimeExtensionRepos).toMutableList()
 
             repos.forEach {
-                val repoUrl = if (it.contains("index.min.json")) {
-                    it
-                } else {
-                    "$it${if (it.endsWith('/')) "" else "/"}index.min.json"
-                }
                 try {
-                    val githubResponse = try {
-                        networkService.client
-                            .newCall(GET(repoUrl))
-                            .awaitSuccess()
-                    } catch (e: Throwable) {
-                        Logger.log("Failed to get repo: $repoUrl")
-                        Logger.log(e)
-                        null
-                    }
-
-                    val response = githubResponse ?: run {
-                        networkService.client
-                            .newCall(GET(fallbackRepoUrl(it) + "/index.min.json"))
-                            .awaitSuccess()
-                    }
-
-                    val repoExtensions = with(json) {
-                        response
-                            .parseAs<List<ExtensionJsonObject>>()
-                            .toAnimeExtensions(it)
-                    }
+                    val repoExtensions = fetchStoreExtensions(it)?.toAnimeStoreExtensions(it)
+                        ?: fetchLegacyExtensions(it).toAnimeExtensions(it)
 
                     val uniqueExtensions = repoExtensions.filter { ext ->
                         val isNew = !seenPackages.contains(ext.pkgName)
@@ -128,6 +109,8 @@ internal class ExtensionGithubApi {
     }
 
     fun getAnimeApkUrl(extension: AnimeExtension.Available): String {
+        // Store-index repos give each extension an absolute APK URL.
+        if (extension.apkName.startsWith("http")) return extension.apkName
         return "${extension.repository.removeSuffix("index.min.json")}/apk/${extension.apkName}"
     }
 
@@ -177,33 +160,9 @@ internal class ExtensionGithubApi {
                 PrefManager.getVal<Set<String>>(PrefName.MangaExtensionRepos).toMutableList()
 
             repos.forEach {
-                val repoUrl = if (it.contains("index.min.json")) {
-                    it
-                } else {
-                    "$it${if (it.endsWith('/')) "" else "/"}index.min.json"
-                }
                 try {
-                    val githubResponse = try {
-                        networkService.client
-                            .newCall(GET(repoUrl))
-                            .awaitSuccess()
-                    } catch (e: Throwable) {
-                        Logger.log("Failed to get repo: $repoUrl")
-                        Logger.log(e)
-                        null
-                    }
-
-                    val response = githubResponse ?: run {
-                        networkService.client
-                            .newCall(GET(fallbackRepoUrl(it) + "/index.min.json"))
-                            .awaitSuccess()
-                    }
-
-                    val repoExtensions = with(json) {
-                        response
-                            .parseAs<List<ExtensionJsonObject>>()
-                            .toMangaExtensions(it)
-                    }
+                    val repoExtensions = fetchStoreExtensions(it)?.toMangaStoreExtensions(it)
+                        ?: fetchLegacyExtensions(it).toMangaExtensions(it)
 
                     val uniqueExtensions = repoExtensions.filter { ext ->
                         val isNew = !seenPackages.contains(ext.pkgName)
@@ -228,6 +187,8 @@ internal class ExtensionGithubApi {
     }
 
     fun getMangaApkUrl(extension: MangaExtension.Available): String {
+        // Store-index repos give each extension an absolute APK URL.
+        if (extension.apkName.startsWith("http")) return extension.apkName
         return "${extension.repository.removeSuffix("index.min.json")}/apk/${extension.apkName}"
     }
 
@@ -369,6 +330,136 @@ internal class ExtensionGithubApi {
 
     fun getNovelApkUrl(extension: NovelExtension.Available): String {
         return "${extension.repository.removeSuffix("index.min.json")}/apk/${extension.pkgName}.apk"
+    }
+
+    private suspend fun fetchLegacyExtensions(repo: String): List<ExtensionJsonObject> {
+        val repoUrl = if (repo.contains("index.min.json")) {
+            repo
+        } else {
+            "$repo${if (repo.endsWith('/')) "" else "/"}index.min.json"
+        }
+        val githubResponse = try {
+            networkService.client
+                .newCall(GET(repoUrl))
+                .awaitSuccess()
+        } catch (e: Throwable) {
+            Logger.log("Failed to get repo: $repoUrl")
+            Logger.log(e)
+            null
+        }
+
+        val response = githubResponse ?: run {
+            networkService.client
+                .newCall(GET(fallbackRepoUrl(repo) + "/index.min.json"))
+                .awaitSuccess()
+        }
+
+        return with(json) { response.parseAs<List<ExtensionJsonObject>>() }
+    }
+
+    /**
+     * Returns the extensions of a repo that publishes Mihon's store index (`index.pb`), or null
+     * if it only has the legacy `index.min.json`. The repo can be given as the index URL itself or
+     * as its `index.min.json` / `repo.json`, whose `index_v2` field then points at the index.
+     */
+    private suspend fun fetchStoreExtensions(repo: String): List<NetworkExtensionStore.Extension>? {
+        val indexUrl = if (repo.isStoreIndexUrl()) {
+            repo
+        } else {
+            val repoJsonUrl = repo.removeSuffix("/")
+                .removeSuffix("/index.min.json")
+                .removeSuffix("/repo.json") + "/repo.json"
+            try {
+                val body = networkService.client.newCall(GET(repoJsonUrl)).awaitSuccess()
+                    .use { it.body.string() }
+                lenientJson.decodeFromString<LegacyRepoJson>(body).indexV2
+            } catch (e: Throwable) {
+                null
+            } ?: return null
+        }
+
+        val store = decodeStoreBody<NetworkExtensionStore>(indexUrl)
+        return store.extensionList?.extensions
+            ?: store.extensionListUrl?.let {
+                decodeStoreBody<NetworkExtensionStore.ExtensionList>(it).extensions
+            }
+            ?: emptyList()
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private suspend inline fun <reified T> decodeStoreBody(url: String): T {
+        var bytes = networkService.client.newCall(GET(url)).awaitSuccess()
+            .use { it.body.bytes() }
+        if (bytes.size >= 2 && bytes[0] == 0x1f.toByte() && bytes[1] == 0x8b.toByte()) {
+            bytes = GZIPInputStream(bytes.inputStream()).use { it.readBytes() }
+        }
+        return if (bytes.firstOrNull() == '{'.code.toByte()) {
+            lenientJson.decodeFromString<T>(bytes.decodeToString())
+        } else {
+            ProtoBuf.decodeFromByteArray<T>(bytes)
+        }
+    }
+
+    private fun String.isStoreIndexUrl(): Boolean {
+        val path = substringBefore('?').removeSuffix("/")
+        return path.endsWith(".pb") || path.endsWith(".pb.gz")
+    }
+
+    private fun NetworkExtensionStore.Extension.libVersion(): Double =
+        extensionLib.toDoubleOrNull() ?: 0.0
+
+    private fun List<NetworkExtensionStore.Extension>.toMangaStoreExtensions(repository: String): List<MangaExtension.Available> {
+        return this
+            .filter {
+                val libVersion = it.libVersion()
+                libVersion >= ExtensionLoader.MANGA_LIB_VERSION_MIN && libVersion <= ExtensionLoader.MANGA_LIB_VERSION_MAX
+            }
+            .map {
+                MangaExtension.Available(
+                    name = it.name.substringAfter("Tachiyomi: "),
+                    pkgName = it.packageName,
+                    versionName = it.versionName,
+                    versionCode = it.versionCode,
+                    libVersion = it.libVersion(),
+                    lang = it.lang,
+                    isNsfw = it.isNsfw,
+                    hasReadme = false,
+                    hasChangelog = false,
+                    sources = it.sources.map { source ->
+                        AvailableMangaSources(source.id, source.language, source.name, source.homeUrl)
+                    },
+                    apkName = it.resources.apkUrl,
+                    repository = repository,
+                    iconUrl = it.resources.iconUrl,
+                )
+            }
+    }
+
+    private fun List<NetworkExtensionStore.Extension>.toAnimeStoreExtensions(repository: String): List<AnimeExtension.Available> {
+        return this
+            .filter {
+                val libVersion = it.libVersion()
+                libVersion >= ExtensionLoader.ANIME_LIB_VERSION_MIN && libVersion <= ExtensionLoader.ANIME_LIB_VERSION_MAX
+            }
+            .map {
+                AnimeExtension.Available(
+                    name = it.name.substringAfter("Aniyomi: "),
+                    pkgName = it.packageName,
+                    versionName = it.versionName,
+                    versionCode = it.versionCode,
+                    libVersion = it.libVersion(),
+                    lang = it.lang,
+                    isNsfw = it.isNsfw,
+                    hasReadme = false,
+                    hasChangelog = false,
+                    sources = it.sources.map { source ->
+                        AvailableAnimeSources(source.id, source.language, source.name, source.homeUrl)
+                    },
+                    apkName = it.resources.apkUrl,
+                    repository = repository,
+                    iconUrl = it.resources.iconUrl,
+                )
+            }
     }
 
     private fun fallbackRepoUrl(repoUrl: String): String? {

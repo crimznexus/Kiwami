@@ -319,7 +319,13 @@ class DynamicAnimeParser(extension: AnimeExtension.Installed) : AnimeParser() {
 class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
     private val mangaCache = Injekt.get<MangaCache>()
     val extension: MangaExtension.Installed
-    var sourceLanguage = 0
+
+    /**
+     * Multi-language extensions list their sources alphabetically (MangaDex starts with
+     * Afrikaans), so start on the English source when there is one.
+     */
+    val defaultSourceLanguage = extension.sources.indexOfFirst { it.lang == "en" }.coerceAtLeast(0)
+    var sourceLanguage = defaultSourceLanguage
 
     init {
         this.extension = extension
@@ -345,12 +351,18 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
         } as? HttpSource ?: return emptyList()
 
         return try {
-            val res = source.getChapterList(sManga)
+            // getMangaUpdate, not getChapterList: lib 1.6 extensions only implement the former.
+            val res = source.getMangaUpdate(
+                sManga, emptyList(), fetchDetails = false, fetchChapters = true
+            ).chapters
             val reversedRes = res.reversed()
             val chapterList = reversedRes.map { sChapterToMangaChapter(it) }
             chapterList
         } catch (e: Exception) {
             Logger.log("loadChapters Exception: $e")
+            emptyList()
+        } catch (e: LinkageError) {
+            reportIncompatible("loadChapters", e)
             emptyList()
         }
     }
@@ -442,7 +454,7 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
         } as? HttpSource ?: return emptyList()
 
         return try {
-            val res = source.fetchSearchManga(1, query, source.getFilterList()).awaitSingle()
+            val res = source.getSearchManga(1, query, source.getFilterList())
             Logger.log("res observable: $res")
             convertMangasPageToShowResponse(res)
         } catch (e: CloudflareBypassException) {
@@ -454,6 +466,21 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
         } catch (e: Exception) {
             Logger.log("General exception in search: $e")
             emptyList()
+        } catch (e: LinkageError) {
+            reportIncompatible("search", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * A LinkageError (AbstractMethodError, NoClassDefFoundError, ...) means the extension was built
+     * against host API this app lacks. It is an Error, not an Exception, so left uncaught it
+     * crashes the whole app; report it instead.
+     */
+    private suspend fun reportIncompatible(where: String, e: LinkageError) {
+        Logger.log("$where: extension ${extension.name} ${extension.versionName} is incompatible: $e")
+        withContext(Dispatchers.Main) {
+            snackString("${extension.name} ${extension.versionName} is not compatible with this app")
         }
     }
 

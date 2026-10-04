@@ -145,7 +145,7 @@ class MangaReadAdapter(
                 binding.mediaSourceTitle.text = showUserText
                 showUserTextListener = { MainScope().launch { binding.mediaSourceTitle.text = it } }
                 source = i
-                setLanguageList(0, i)
+                setLanguageList(defaultLanguageIndex(i), i)
             }
             subscribeButton(false)
             // Invalidate if it's the last source
@@ -555,7 +555,7 @@ class MangaReadAdapter(
                             binding.mediaSourceTitle.text = showUserText
                             showUserTextListener =
                                 { MainScope().launch { binding.mediaSourceTitle.text = it } }
-                            setLanguageList(0, nextIndex)
+                            setLanguageList(defaultLanguageIndex(nextIndex), nextIndex)
                         }
                         subscribeButton(false)
                         // Invalidate if it's the last source
@@ -572,6 +572,10 @@ class MangaReadAdapter(
             }
         }
     }
+
+    private fun defaultLanguageIndex(source: Int): Int =
+        ((mangaReadSources as? MangaSources)?.get(source) as? DynamicMangaParser)
+            ?.defaultSourceLanguage ?: 0
 
     private fun setLanguageList(lang: Int, source: Int) {
         val binding = _binding

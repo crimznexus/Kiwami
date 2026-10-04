@@ -29,7 +29,11 @@ android {
 
     defaultConfig {
         applicationId "app.redantotsu.asr"
-        minSdk 23
+        // 24+, not 23: below 24, D8 desugars default interface methods by stripping them from
+        // the interface, so extensions (which link against the host's kotlinx.serialization,
+        // OkHttp, etc. at runtime) hit AbstractMethodError, e.g. MangaDex on
+        // GeneratedSerializer.typeParametersSerializers().
+        minSdk 24
         targetSdk 35
         versionName "1.0.7"
         versionCode 100000007
@@ -72,6 +76,13 @@ android {
             manifestPlaceholders.icon_placeholder_round = "@mipmap/ic_launcher_round"
             debuggable false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-gson.pro', 'proguard-rules.pro'
+        }
+    }
+    packaging {
+        resources {
+            // OkHttp 5.3's modules and jspecify each ship this OSGi metadata file, which is
+            // meaningless on Android; without this the java-resource merge fails.
+            pickFirsts += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
     buildFeatures {
@@ -128,8 +139,11 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.github.Blatzar:NiceHttp:0.4.4'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.6.3'
+    // Extensions use the host's kotlinx.serialization. Lib 1.6 ones are compiled against a
+    // runtime where GeneratedSerializer.typeParametersSerializers() has a default body (1.6.3
+    // still has it abstract: AbstractMethodError). 1.9.0 is the newest for Kotlin 2.2.
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.9.0'
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.webkit:webkit:1.11.0'
     implementation "com.anggrayudi:storage:1.5.5"
@@ -209,13 +223,21 @@ dependencies {
     implementation 'ca.gosyer:voyager-navigator:1.0.0-rc07'
     implementation 'com.squareup.logcat:logcat:0.1'
     implementation 'uy.kohesive.injekt:injekt-core:1.16.+'
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.14'
-    implementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.14'
-    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:5.0.0-alpha.14'
+    // Extensions built against extensions-lib 1.6 use the host's OkHttp directly and call
+    // classes that postdate 5.0.0-alpha.14 (okhttp3.CompressionInterceptor), failing every
+    // request with NoClassDefFoundError. 5.3.2 is the newest release that has it and still
+    // builds against compileSdk 35: 5.4.0+ require compileSdk 36 or later, which this
+    // Android Gradle plugin does not support. Keep all okhttp3 artifacts on one version.
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.3.2'
+    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:5.3.2'
     implementation 'com.squareup.okio:okio:3.8.0'
-    implementation 'com.squareup.okhttp3:okhttp-brotli:5.0.0-alpha.14'
+    implementation 'com.squareup.okhttp3:okhttp-brotli:5.3.2'
+    // Lib 1.6 extensions build a CompressionInterceptor with okhttp3.zstd.Zstd, which the host
+    // must provide (Mihon ships it too); without it searches fail with NoClassDefFoundError.
+    implementation 'com.squareup.okhttp3:okhttp-zstd:5.3.2'
     implementation 'org.jsoup:jsoup:1.16.1'
-    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.6.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json-okio:1.9.0'
     implementation 'com.jakewharton.rxrelay:rxrelay:1.2.0'
     implementation 'com.github.tachiyomiorg:unifile:17bec43'
     implementation 'com.github.gpanther:java-nat-sort:natural-comparator-1.1'

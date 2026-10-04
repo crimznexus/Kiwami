@@ -8,12 +8,10 @@ import ani.dantotsu.settings.saving.PrefName
 import ani.dantotsu.util.Logger
 import com.lagradost.nicehttp.Requests
 import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
-import eu.kanade.tachiyomi.network.interceptor.IgnoreGzipInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UncaughtExceptionInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UserAgentInterceptor
 import okhttp3.Cache
 import okhttp3.OkHttpClient
-import okhttp3.brotli.BrotliInterceptor
 import okhttp3.logging.HttpLoggingInterceptor
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -77,8 +75,10 @@ private fun setupSocks5Proxy() {
             )
             .addInterceptor(UncaughtExceptionInterceptor())
             .addInterceptor(UserAgentInterceptor(::defaultUserAgentProvider))
-            .addNetworkInterceptor(IgnoreGzipInterceptor())
-            .addNetworkInterceptor(BrotliInterceptor)
+        // Deliberately no IgnoreGzipInterceptor / BrotliInterceptor here, matching Mihon's default
+        // client. Lib 1.6 extensions (e.g. MangaDex) assert that IgnoreGzipInterceptor is absent
+        // and fail every request with "must not be present in default client" otherwise;
+        // OkHttp's built-in gzip handling covers the rest.
 
         class ConsoleLogger : HttpLoggingInterceptor.Logger {
             override fun log(message: String) {

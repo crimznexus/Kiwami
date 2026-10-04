@@ -5,37 +5,44 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Kiwami mark: a rounded "K" paired with a play glyph.
-         All geometry sits inside the adaptive-icon safe zone (the centre 66x66
-         of the 108x108 canvas, i.e. 21..87 on both axes) so no launcher mask
-         can clip it. Arms meet the stem at y=54 and their round caps overlap
-         the stem, which is what visually joins the letterform. -->
-    <group>
+    <!-- Kiwami mark: a heavy rounded "K" with a play glyph beside it.
+         The stem is a touch heavier than the arms so the letter holds its
+         weight at 24dp, and the arms' round caps overlap the stem, which is
+         what joins the letterform. The play glyph keeps a clear gap from the
+         arms so the two still separate in the one-colour themed icon.
+         Drawn on a 108 canvas and scaled 0.9 about the centre so every point
+         stays inside the 66dp safe circle that no launcher mask can clip.
+         Keep in sync with ic_launcher_monochrome.xml. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
         <!-- stem -->
         <path
-            android:pathData="M33,33 V75"
+            android:pathData="M31,33 V75"
             android:strokeColor="#FFF5F8"
-            android:strokeWidth="9"
+            android:strokeWidth="12"
             android:strokeLineCap="round" />
         <!-- upper arm -->
         <path
-            android:pathData="M38.5,54 L53,35.5"
+            android:pathData="M37.5,54 L53,34"
             android:strokeColor="#FFF5F8"
-            android:strokeWidth="8.5"
+            android:strokeWidth="11"
             android:strokeLineCap="round" />
         <!-- lower arm -->
         <path
-            android:pathData="M38.5,54 L53,72.5"
+            android:pathData="M37.5,54 L53,74"
             android:strokeColor="#FFF5F8"
-            android:strokeWidth="8.5"
+            android:strokeWidth="11"
             android:strokeLineCap="round" />
         <!-- play glyph: fill plus a same-colour round-joined stroke, which is
              what rounds the three corners without hand-authoring arcs. -->
         <path
-            android:pathData="M64,44.5 L77,54 L64,63.5 Z"
+            android:pathData="M63,41.5 L80,54 L63,66.5 Z"
             android:fillColor="#FFB3C6"
             android:strokeColor="#FFB3C6"
-            android:strokeWidth="4"
+            android:strokeWidth="5"
             android:strokeLineCap="round"
             android:strokeLineJoin="round" />
     </group>

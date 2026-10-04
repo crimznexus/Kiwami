@@ -7,28 +7,33 @@
 
     <!-- Themed-icon layer (Android 13+). The system reads only the alpha
          channel here and applies the user's wallpaper colours, so the whole
-         mark is drawn flat in one colour rather than in the brand palette. -->
-    <group>
+         mark is drawn flat in one colour rather than in the brand palette.
+         Same geometry as ic_launcher_foreground.xml. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
         <path
-            android:pathData="M33,33 V75"
+            android:pathData="M31,33 V75"
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="9"
+            android:strokeWidth="12"
             android:strokeLineCap="round" />
         <path
-            android:pathData="M38.5,54 L53,35.5"
+            android:pathData="M37.5,54 L53,34"
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="8.5"
+            android:strokeWidth="11"
             android:strokeLineCap="round" />
         <path
-            android:pathData="M38.5,54 L53,72.5"
+            android:pathData="M37.5,54 L53,74"
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="8.5"
+            android:strokeWidth="11"
             android:strokeLineCap="round" />
         <path
-            android:pathData="M64,44.5 L77,54 L64,63.5 Z"
+            android:pathData="M63,41.5 L80,54 L63,66.5 Z"
             android:fillColor="#FFFFFF"
             android:strokeColor="#FFFFFF"
-            android:strokeWidth="4"
+            android:strokeWidth="5"
             android:strokeLineCap="round"
             android:strokeLineJoin="round" />
     </group>

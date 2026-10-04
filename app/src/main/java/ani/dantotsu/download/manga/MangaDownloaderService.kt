@@ -183,6 +183,12 @@ class MangaDownloaderService : Service() {
     suspend fun download(task: DownloadTask) {
         try {
             withContext(Dispatchers.IO) {
+                // A failed or rate-limited page-list request reaches here as an empty list.
+                // Without this guard the loop below runs zero times, the chapter folder
+                // has already been wiped, and an empty chapter is recorded as downloaded.
+                if (task.imageData.isEmpty()) {
+                    throw Exception("${task.chapter} - No pages were found, nothing was downloaded.")
+                }
                 val notifi = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     ContextCompat.checkSelfPermission(
                         this@MangaDownloaderService,

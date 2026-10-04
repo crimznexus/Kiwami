@@ -367,7 +367,7 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
         val ret = coroutineScope {
             try {
                 Logger.log("source.name " + source.name)
-                val res = source.getPageList(sChapter)
+                val res = PageListLimiter.forReading(source, sChapter)
                 val reIndexedPages =
                     res.mapIndexed { index, page -> Page(index, page.url, page.imageUrl, page.uri) }
 
@@ -382,6 +382,10 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
 
                 deferreds.awaitAll()
 
+            } catch (e: PageListLimiter.RateLimitedException) {
+                Logger.log("loadImages rate limited: ${e.cause}")
+                snackString(e.message)
+                emptyList()
             } catch (e: Exception) {
                 Logger.log("loadImages Exception: $e")
                 snackString("Failed to load images: $e")
@@ -402,7 +406,8 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
         return coroutineScope {
             try {
                 Logger.log("source.name " + source.name)
-                val res = source.getPageList(sChapter)
+                // Downloads queue per source and wait out rate limits; see PageListLimiter.
+                val res = PageListLimiter.forDownload(source, sChapter)
                 val reIndexedPages =
                     res.mapIndexed { index, page -> Page(index, page.url, page.imageUrl, page.uri) }
 
@@ -416,6 +421,10 @@ class DynamicMangaParser(extension: MangaExtension.Installed) : MangaParser() {
                 }
 
                 deferreds.awaitAll()
+            } catch (e: PageListLimiter.RateLimitedException) {
+                Logger.log("imageList rate limited: ${e.cause}")
+                snackString(e.message)
+                emptyList()
             } catch (e: Exception) {
                 Logger.log("loadImages Exception: $e")
                 snackString("Failed to load images: $e")

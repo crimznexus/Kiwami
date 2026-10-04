@@ -10,6 +10,11 @@ import androidx.lifecycle.viewModelScope
 import ani.dantotsu.R
 import ani.dantotsu.connections.anilist.Anilist
 import ani.dantotsu.currContext
+import ani.dantotsu.download.DownloadsManager
+import ani.dantotsu.download.DownloadsManager.Companion.compareName
+import ani.dantotsu.parsers.OfflineMangaParser
+import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.get
 import ani.dantotsu.media.anime.Episode
 import ani.dantotsu.media.anime.SelectorDialogFragment
 import ani.dantotsu.media.manga.MangaChapter
@@ -300,17 +305,38 @@ class MediaDetailsViewModel : ViewModel() {
     suspend fun loadMangaChapterImages(
         chapter: MangaChapter,
         selected: Selected,
-        post: Boolean = true
+        post: Boolean = true,
+        media: Media? = null
     ): Boolean {
 
         return tryWithSuspend(true) {
             chapter.addImages(
-                mangaReadSources?.get(selected.sourceIndex)
-                    ?.loadImages(chapter.link, chapter.sChapter) ?: return@tryWithSuspend false
+                media?.let { downloadedImages(it, chapter) }
+                    ?: mangaReadSources?.get(selected.sourceIndex)
+                        ?.loadImages(chapter.link, chapter.sChapter)
+                    ?: return@tryWithSuspend false
             )
             if (post) mangaChapter.postValue(chapter)
             true
         } ?: false
+    }
+
+    /**
+     * Pages of [chapter] from its finished download, if any. Lets the reader open chapters
+     * that the auto downloader fetched ahead instantly instead of loading them again online.
+     */
+    private suspend fun downloadedImages(media: Media, chapter: MangaChapter): List<MangaImage>? {
+        val entry = Injekt.get<DownloadsManager>().mangaDownloadedTypes.firstOrNull {
+            media.compareName(it.titleName) &&
+                    (it.chapterName == chapter.title || it.chapterName == chapter.number)
+        } ?: return null
+        return try {
+            OfflineMangaParser().loadImages("${entry.titleName}/${entry.chapterName}", chapter.sChapter)
+                .takeIf { it.isNotEmpty() }
+        } catch (e: Exception) {
+            Logger.log("Downloaded copy of ${chapter.number} unreadable, loading online: $e")
+            null
+        }
     }
 
     fun loadTransformation(mangaImage: MangaImage, source: Int): BitmapTransformation? {

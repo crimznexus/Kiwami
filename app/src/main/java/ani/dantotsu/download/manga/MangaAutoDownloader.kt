@@ -24,11 +24,18 @@ object MangaAutoDownloader {
 
     private fun key(mediaId: Int) = "${mediaId}_auto_download_ahead"
 
-    fun aheadCount(mediaId: Int): Int = PrefManager.getCustomVal(key(mediaId), 0)
+    /**
+     * Keep the next chapter downloaded by default, so moving on at the end of a chapter
+     * (see MangaReaderActivity.maybeAutoAdvance) opens a stored copy instead of waiting.
+     */
+    private const val DEFAULT_AHEAD = 1
+
+    fun aheadCount(mediaId: Int): Int = PrefManager.getCustomVal(key(mediaId), DEFAULT_AHEAD)
 
     fun setAheadCount(mediaId: Int, count: Int) {
-        if (count > 0) PrefManager.setCustomVal(key(mediaId), count)
-        else PrefManager.removeCustomVal(key(mediaId))
+        // Stored even when 0: removing the key would fall back to DEFAULT_AHEAD, so "Off"
+        // could never stick.
+        PrefManager.setCustomVal(key(mediaId), count.coerceAtLeast(0))
     }
 
     fun isDownloaded(

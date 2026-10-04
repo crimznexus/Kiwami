@@ -211,7 +211,15 @@ class MangaChapterAdapter(
                         fragment.onMangaChapterStopDownloadClick(chapter)
                         return@setOnClickListener
                     } else if (downloadedChapters.contains(chapterNumber)) {
-                        fragment.onDownloadedChapterOptions(chapter)
+                        it.context.customAlertDialog().apply {
+                            setTitle("Delete Chapter")
+                            setMessage("Are you sure you want to delete ${chapterNumber}?")
+                            setPosButton(R.string.delete) {
+                                fragment.onMangaChapterRemoveDownloadClick(chapter)
+                            }
+                            setNegButton(R.string.cancel)
+                            show()
+                        }
                         return@setOnClickListener
                     } else {
                         fragment.onMangaChapterDownloadClick(chapter)

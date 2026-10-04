@@ -1151,10 +1151,16 @@ Non quae tempore quo provident laudantium qui illo dolor vel quia dolor et exerc
     <string name="enhance_progress">%1$s · page %2$d of %3$d (%4$s)</string>
     <string name="enhance_done">%1$s enhanced</string>
     <string name="enhance_failed">Could not enhance %1$s</string>
-    <string name="enhance_queued">Enhancing %1$s in the background</string>
     <string name="enhance_pages">Enhance pages</string>
-    <string name="downloaded_chapter_title">Chapter %1$s</string>
-    <string name="enhance_dialog_message">Enhance pages upscales and sharpens the downloaded pages of this chapter with an on-device AI model, replacing the originals. It runs in the background and can take several minutes. Delete removes the download.</string>
-    <string name="enhance_dialog_message_enhanced">Pages are enhanced. Delete removes the download, including the enhanced pages.</string>
-    <string name="enhance_dialog_message_pending">Enhancing in the background. Delete removes the download.</string>
+    <string name="enhance_option_title">AI enhance</string>
+    <string name="enhance_option_subtitle">Upscale &amp; sharpen pages</string>
+    <string name="enhance_options_message">Upscales and sharpens pages with an on-device AI model, replacing the downloaded pages until the chapter is deleted. Chapters not downloaded yet are downloaded first. It runs in the background; a chapter can take several minutes.\n\n%1$d chapters are downloaded.</string>
+    <string name="enhance_all_downloaded">All downloaded (%1$d)</string>
+    <string name="enhance_choose_chapters">Choose chapters</string>
+    <string name="enhance_pick_title">Choose chapters (✓ downloaded)</string>
+    <string name="enhance_item_downloaded">✓ %1$s</string>
+    <string name="enhance_item_download_first">%1$s</string>
+    <string name="enhance_none_chosen">No chapters chosen</string>
+    <string name="enhance_no_chapters">No chapters loaded yet</string>
+    <string name="enhance_started">Enhancing %1$d chapters (%2$d downloading first)</string>
 </resources>

@@ -44,7 +44,7 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 ### Reading
 - **Continuous chapters** — in the scrolling layouts, reaching the end of a chapter opens the next one by itself; no overscroll pull needed (the pull still works).
 - **Next chapter predownloaded by default** — the auto downloader keeps one chapter ahead (adjustable per title in the download sheet, or off), and the reader opens downloaded chapters from storage instead of fetching them again.
-- **AI page enhancer** — tap the delete icon on a downloaded chapter and choose **Enhance pages** to upscale and clean its pages with an on-device Real-ESRGAN anime model (up to 2x, max 1600 px wide). It runs in the background with a cancellable notification, resumes if interrupted, and replaces the downloaded pages; deleting the chapter removes them.
+- **AI page enhancer** — **Options (☰) → AI enhance** on a manga's chapter list upscales and cleans pages with an on-device Real-ESRGAN anime model (up to 2x, max 1600 px wide): all downloaded chapters at once, or chosen chapters, downloading any that aren't stored yet first. It runs in the background with a cancellable notification, resumes if interrupted, and replaces the downloaded pages; deleting the chapter removes them.
 - **Rate-limit aware page loading** — sources that answer "too many requests" no longer show a raw JSON error: reading reports the wait, and downloads queue per source and retry after the requested delay. An empty page list can no longer wipe an already-downloaded chapter.
 
 ### Extensions
@@ -67,14 +67,16 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 
 Low-resolution or JPEG-mangled manhwa can be cleaned up on the phone itself, no server involved.
 
-1. Download a chapter.
-2. Tap its delete icon and choose **Enhance pages**.
-3. Read it as usual once the notification says it is done.
+1. Open a manga's chapter list and tap the **Options** (☰) button next to the download button.
+2. Tap **AI enhance**, then either:
+   - **All downloaded (N)** to enhance every downloaded chapter, or
+   - **Choose chapters** to pick any chapters (✓ marks downloaded ones). Chapters that aren't downloaded yet are downloaded first and enhanced as soon as each download finishes.
+3. Read as usual once the notification says a chapter is done.
 
 - **What it does:** runs the [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) `animevideov3` model (bundled, ~2.5 MB) to upscale pages up to 2x (at most 1600 px wide) and remove blur and compression blocks.
 - **Where the result goes:** enhanced pages **replace** the downloaded ones and stay until the chapter is deleted. Expect an enhanced chapter to take roughly 3–5x the storage.
 - **Speed:** it times the phone's GPU/NPU (NNAPI) against its CPU on first use and keeps the faster one. Expect several seconds to a few tens of seconds per page, so a chapter takes minutes; it runs in the background with a cancellable notification and resumes if interrupted.
-- **Only for downloaded chapters**, so online reading is unaffected.
+- **Works on stored pages**, so online reading is unaffected.
 
 The model is converted from the official weights with [`tools/enhance/convert_realesr.py`](tools/enhance/convert_realesr.py); its BSD-3 license ships in `app/src/main/assets/enhance/`.
 

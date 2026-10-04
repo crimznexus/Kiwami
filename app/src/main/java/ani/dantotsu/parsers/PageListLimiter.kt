@@ -27,6 +27,7 @@ object PageListLimiter {
     private const val MAX_RETRIES = 3
     private const val DEFAULT_RETRY_AFTER_S = 60
     private const val MAX_RETRY_AFTER_S = 120
+    private const val SERVER_ERROR_RETRY_S = 10
 
     private val locks = ConcurrentHashMap<Long, Mutex>()
     private val lastRequestAt = ConcurrentHashMap<Long, Long>()
@@ -56,12 +57,30 @@ object PageListLimiter {
             try {
                 return source.getPageList(chapter)
             } catch (e: Exception) {
-                val retryAfter = retryAfterSeconds(e) ?: throw e
+                val retryAfter = retryAfterSeconds(e)
+                if (retryAfter == null) {
+                    // A server that is briefly down is worth a few short retries in the
+                    // background; after that the original error is reported.
+                    if (!isServerError(e) || ++attempt > MAX_RETRIES) throw e
+                    Logger.log("${source.name} server error on page list; retrying in ${SERVER_ERROR_RETRY_S}s ($attempt/$MAX_RETRIES)")
+                    delay(SERVER_ERROR_RETRY_S * 1_000L)
+                    continue
+                }
                 if (++attempt > MAX_RETRIES) throw RateLimitedException(source.name, retryAfter, e)
                 Logger.log("${source.name} rate-limited page list; retrying in ${retryAfter}s ($attempt/$MAX_RETRIES)")
                 delay(retryAfter * 1_000L)
             }
         }
+    }
+
+    /**
+     * Whether [e] is a temporary server-side failure (502/503/504), either as an HTTP status
+     * or as Cloudflare's plain-text "error code: 502" body that an extension tried to parse.
+     */
+    private fun isServerError(e: Throwable): Boolean {
+        val text = generateSequence(e) { it.cause }.mapNotNull { it.message }.joinToString(" ")
+        return Regex("""(error code:|HTTP error|\bHTTP)\s*50[234](?!\d)""", RegexOption.IGNORE_CASE)
+            .containsMatchIn(text)
     }
 
     /**

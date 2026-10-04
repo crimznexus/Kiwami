@@ -17,7 +17,6 @@ import androidx.documentfile.provider.DocumentFile
 import ani.dantotsu.R
 import ani.dantotsu.download.DownloadsManager.Companion.getSubDirectory
 import ani.dantotsu.media.MediaType
-import ani.dantotsu.snackString
 import ani.dantotsu.util.Logger
 import eu.kanade.tachiyomi.data.notification.Notifications.CHANNEL_DOWNLOADER_PROGRESS
 import kotlinx.coroutines.CoroutineScope
@@ -184,7 +183,25 @@ class ChapterEnhanceService : Service() {
         @Volatile
         private var current: Request? = null
 
+        /** Chapters (title to chapter folder name) to enhance as soon as their download finishes. */
+        private val afterDownload = java.util.Collections.synchronizedSet(mutableSetOf<Pair<String, String>>())
+
         fun isPending(request: Request) = current == request || request in queue
+
+        /** Enhance this chapter once [MangaDownloaderService] has finished downloading it. */
+        fun enhanceAfterDownload(title: String, chapter: String) {
+            afterDownload += title to chapter
+        }
+
+        fun onChapterDownloaded(context: Context, title: String, chapter: String) {
+            if (afterDownload.remove(title to chapter)) {
+                enqueue(context, Request(title, title, chapter))
+            }
+        }
+
+        fun onChapterDownloadFailed(title: String, chapter: String) {
+            afterDownload.remove(title to chapter)
+        }
 
         fun enqueue(context: Context, request: Request) {
             if (isPending(request)) return
@@ -192,7 +209,6 @@ class ChapterEnhanceService : Service() {
             ContextCompat.startForegroundService(
                 context, Intent(context, ChapterEnhanceService::class.java)
             )
-            snackString(context.getString(R.string.enhance_queued, request.chapterName))
         }
 
         private fun chapterDir(context: Context, title: String, chapter: String): DocumentFile? =

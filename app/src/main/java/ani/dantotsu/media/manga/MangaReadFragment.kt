@@ -639,40 +639,86 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
     }
 
 
-    /** Options for a downloaded chapter: enhance its pages, or delete the download. */
-    fun onDownloadedChapterOptions(chapter: MangaChapter) {
-        val download = downloadManager.mangaDownloadedTypes.firstOrNull {
-            media.compareName(it.titleName) &&
-                    (it.chapterName == chapter.title || it.chapterName == chapter.number)
+    /**
+     * The Options menu's "Enhance pages": enhance every downloaded chapter, or chosen
+     * chapters (downloading the ones that are not stored yet, then enhancing them).
+     */
+    fun showEnhanceOptions() {
+        val chapters = media.manga?.chapters?.values?.toList().orEmpty()
+        if (chapters.isEmpty()) {
+            snackString(getString(R.string.enhance_no_chapters))
+            return
         }
-        val request = download?.let {
-            ChapterEnhanceService.Request(media.mainName(), it.titleName, it.chapterName)
-        }
-        viewLifecycleOwner.lifecycleScope.launch {
-            val enhanced = request != null &&
-                    ChapterEnhanceService.isEnhanced(requireContext(), request.titleName, request.chapterName)
-            val pending = request != null && ChapterEnhanceService.isPending(request)
-            requireContext().customAlertDialog().apply {
-                setTitle(getString(R.string.downloaded_chapter_title, chapter.number))
-                setMessage(
-                    getString(
-                        when {
-                            enhanced -> R.string.enhance_dialog_message_enhanced
-                            pending -> R.string.enhance_dialog_message_pending
-                            else -> R.string.enhance_dialog_message
-                        }
-                    )
-                )
-                setPosButton(R.string.delete) { onMangaChapterRemoveDownloadClick(chapter) }
-                if (request != null && !enhanced && !pending) {
-                    setNeutralButton(getString(R.string.enhance_pages)) {
-                        ChapterEnhanceService.enqueue(requireContext(), request)
-                    }
+        val downloaded = chapters.filter { isChapterDownloaded(it) }
+        requireContext().customAlertDialog().apply {
+            setTitle(getString(R.string.enhance_pages))
+            setMessage(getString(R.string.enhance_options_message, downloaded.size))
+            if (downloaded.isNotEmpty()) {
+                setPosButton(getString(R.string.enhance_all_downloaded, downloaded.size)) {
+                    enhanceChapters(downloaded)
                 }
-                setNegButton(R.string.cancel)
-                show()
             }
+            setNeutralButton(getString(R.string.enhance_choose_chapters)) { pickChaptersToEnhance(chapters) }
+            setNegButton(R.string.cancel)
+            show()
         }
+    }
+
+    private fun pickChaptersToEnhance(chapters: List<MangaChapter>) {
+        val labels = chapters.map { chapter ->
+            val name = chapter.title?.takeIf { it.isNotBlank() && it != "null" } ?: chapter.number
+            getString(
+                if (isChapterDownloaded(chapter)) R.string.enhance_item_downloaded
+                else R.string.enhance_item_download_first,
+                name
+            )
+        }.toTypedArray()
+        val checked = BooleanArray(chapters.size)
+        requireContext().customAlertDialog().apply {
+            setTitle(getString(R.string.enhance_pick_title))
+            multiChoiceItems(labels, checked) {}
+            setPosButton(getString(R.string.enhance_pages)) {
+                val chosen = chapters.filterIndexed { i, _ -> checked[i] }
+                if (chosen.isEmpty()) snackString(getString(R.string.enhance_none_chosen))
+                else enhanceChapters(chosen)
+            }
+            setNegButton(R.string.cancel)
+            show()
+        }
+    }
+
+    /** Enhance [chapters]; those not downloaded yet are downloaded first. */
+    private fun enhanceChapters(chapters: List<MangaChapter>) {
+        val act = activity ?: return
+        fun go() {
+            var downloading = 0
+            chapters.forEach { chapter ->
+                val download = downloadManager.mangaDownloadedTypes.firstOrNull {
+                    media.compareName(it.titleName) &&
+                            (it.chapterName == chapter.title || it.chapterName == chapter.number)
+                }
+                if (download != null) {
+                    ChapterEnhanceService.enqueue(
+                        act, ChapterEnhanceService.Request(media.mainName(), download.titleName, download.chapterName)
+                    )
+                } else if (chapter.title != null) {
+                    // The downloader names the folder after the chapter title (see
+                    // onMangaChapterDownloadClick), which is what it reports when done.
+                    ChapterEnhanceService.enhanceAfterDownload(media.mainName(), chapter.title!!)
+                    onMangaChapterDownloadClick(chapter)
+                    chapterAdapter.startDownload(chapter.uniqueNumber())
+                    downloading++
+                }
+            }
+            snackString(getString(R.string.enhance_started, chapters.size, downloading))
+        }
+        // Downloading and enhancing both need the download folder.
+        if (!hasDirAccess(act)) {
+            (act as MediaDetailsActivity).accessAlertDialog(act.launcher) { success ->
+                if (success) go()
+                else snackString(getString(R.string.download_permission_required))
+            }
+        } else go()
     }
 
     fun onMangaChapterRemoveDownloadClick(i: MangaChapter) {

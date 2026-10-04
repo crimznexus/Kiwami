@@ -21,6 +21,7 @@ import ani.dantotsu.R
 import ani.dantotsu.connections.crashlytics.CrashlyticsInterface
 import ani.dantotsu.download.DownloadedType
 import ani.dantotsu.download.DownloadsManager
+import ani.dantotsu.download.manga.enhance.ChapterEnhanceService
 import ani.dantotsu.download.DownloadsManager.Companion.getSubDirectory
 import ani.dantotsu.media.Media
 import ani.dantotsu.media.MediaType
@@ -288,12 +289,14 @@ class MangaDownloaderService : Service() {
                 )
                 broadcastDownloadFinished(task.uniqueName)
                 snackString("${task.title} - ${task.chapter} Download finished")
+                ChapterEnhanceService.onChapterDownloaded(this@MangaDownloaderService, task.title, task.chapter)
             }
         } catch (e: Exception) {
             Logger.log("Exception while downloading file: ${e.message}")
             snackString("Exception while downloading file: ${e.message}")
             Injekt.get<CrashlyticsInterface>().logException(e)
             broadcastDownloadFailed(task.uniqueName)
+            ChapterEnhanceService.onChapterDownloadFailed(task.title, task.chapter)
         }
     }
 

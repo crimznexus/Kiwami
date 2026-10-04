@@ -272,6 +272,9 @@ class MangaReadAdapter(
 
                 // Downloads moved to the dedicated sheet on the header's download button.
                 animeDownloadContainer.isVisible = false
+
+                // AI page enhancer: all downloaded chapters, or chosen ones (downloaded first).
+                mangaEnhanceContainer.isVisible = !offline // click handler set where the dialog is shown
                 resetProgress.setOnClickListener {
                     fragment.requireContext().customAlertDialog().apply {
                         setTitle(" Delete Progress for all chapters of ${media.nameRomaji}")
@@ -375,6 +378,13 @@ class MangaReadAdapter(
                     }
                     setNegButton("Cancel") {
                         if (refresh) fragment.loadChapters(source, true)
+                    }
+                    // Close Options before the enhancer's own dialog (or its message) shows.
+                    attach { dialog ->
+                        mangaEnhanceContainer.setOnClickListener {
+                            dialog.dismiss()
+                            fragment.showEnhanceOptions()
+                        }
                     }
                     show()
                 }

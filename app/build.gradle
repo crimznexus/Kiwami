@@ -101,6 +101,13 @@ android {
         }
     }
     packaging {
+        jniLibs {
+            // Compress native libraries (extracted on install) rather than storing them raw:
+            // ONNX Runtime alone is 32 MB per ABI and compresses to about a third.
+            useLegacyPackaging = true
+            // 32-bit x86 only matters for old emulators; x86_64 still covers current ones.
+            excludes += ["lib/x86/**"]
+        }
         resources {
             // OkHttp 5.3's modules and jspecify each ship this OSGi metadata file, which is
             // meaningless on Android; without this the java-resource merge fails.

@@ -37,6 +37,7 @@ import ani.dantotsu.databinding.ItemDownloadOptionBinding
 import ani.dantotsu.download.DownloadedType
 import ani.dantotsu.download.DownloadsManager
 import ani.dantotsu.download.DownloadsManager.Companion.compareName
+import ani.dantotsu.download.manga.enhance.ChapterEnhanceService
 import ani.dantotsu.download.manga.MangaAutoDownloader
 import ani.dantotsu.download.manga.MangaDownloaderService
 import ani.dantotsu.download.manga.MangaServiceDataSingleton
@@ -637,6 +638,42 @@ open class MangaReadFragment : Fragment(), ScanlatorSelectionListener {
         return true
     }
 
+
+    /** Options for a downloaded chapter: enhance its pages, or delete the download. */
+    fun onDownloadedChapterOptions(chapter: MangaChapter) {
+        val download = downloadManager.mangaDownloadedTypes.firstOrNull {
+            media.compareName(it.titleName) &&
+                    (it.chapterName == chapter.title || it.chapterName == chapter.number)
+        }
+        val request = download?.let {
+            ChapterEnhanceService.Request(media.mainName(), it.titleName, it.chapterName)
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val enhanced = request != null &&
+                    ChapterEnhanceService.isEnhanced(requireContext(), request.titleName, request.chapterName)
+            val pending = request != null && ChapterEnhanceService.isPending(request)
+            requireContext().customAlertDialog().apply {
+                setTitle(getString(R.string.downloaded_chapter_title, chapter.number))
+                setMessage(
+                    getString(
+                        when {
+                            enhanced -> R.string.enhance_dialog_message_enhanced
+                            pending -> R.string.enhance_dialog_message_pending
+                            else -> R.string.enhance_dialog_message
+                        }
+                    )
+                )
+                setPosButton(R.string.delete) { onMangaChapterRemoveDownloadClick(chapter) }
+                if (request != null && !enhanced && !pending) {
+                    setNeutralButton(getString(R.string.enhance_pages)) {
+                        ChapterEnhanceService.enqueue(requireContext(), request)
+                    }
+                }
+                setNegButton(R.string.cancel)
+                show()
+            }
+        }
+    }
 
     fun onMangaChapterRemoveDownloadClick(i: MangaChapter) {
         downloadManager.removeDownload(

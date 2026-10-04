@@ -60,7 +60,8 @@ class OfflineMangaParser : MangaParser() {
         val imageNumberRegex = Regex("""(\d+)\.jpg$""")
         if (directory?.exists() == true) {
             directory.listFiles().forEach {
-                if (it.isFile) {
+                // Dot-files are bookkeeping (e.g. the page enhancer's marker), not pages.
+                if (it.isFile && it.name?.startsWith(".") == false) {
                     val image = MangaImage(it.uri.toString(), false, null)
                     images.add(image)
                 }

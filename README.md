@@ -43,6 +43,7 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 ### Reading
 - **Continuous chapters** — in the scrolling layouts, reaching the end of a chapter opens the next one by itself; no overscroll pull needed (the pull still works).
 - **Next chapter predownloaded by default** — the auto downloader keeps one chapter ahead (adjustable per title in the download sheet, or off), and the reader opens downloaded chapters from storage instead of fetching them again.
+- **AI page enhancer** — tap the delete icon on a downloaded chapter and choose **Enhance pages** to upscale and clean its pages with an on-device Real-ESRGAN anime model (up to 2x, max 1600 px wide). It runs in the background with a cancellable notification, resumes if interrupted, and replaces the downloaded pages; deleting the chapter removes them.
 - **Rate-limit aware page loading** — sources that answer "too many requests" no longer show a raw JSON error: reading reports the wait, and downloads queue per source and retry after the requested delay. An empty page list can no longer wipe an already-downloaded chapter.
 
 ### Extensions

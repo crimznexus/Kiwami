@@ -135,6 +135,11 @@ class MangaReaderActivity : AppCompatActivity() {
     private var autoScrollJob: Job? = null
     private var isUserScrolling = false
 
+    // Continuous layouts move on to the next chapter by themselves at the end of a chapter,
+    // instead of needing the overscroll pull. Reset whenever a chapter is (re)applied.
+    private var movedForward = false
+    private var autoAdvanced = false
+
     private val directionRLBT
         get() = defaultSettings.direction == RIGHT_TO_LEFT
                 || defaultSettings.direction == BOTTOM_TO_TOP
@@ -663,13 +668,21 @@ class MangaReaderActivity : AppCompatActivity() {
 
                 manager.setStackFromEnd(defaultSettings.direction == BOTTOM_TO_TOP)
 
+                movedForward = false
+                autoAdvanced = false
                 addOnScrollListener(object : RecyclerView.OnScrollListener() {
                     override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                         isUserScrolling = newState == RecyclerView.SCROLL_STATE_DRAGGING
+                        if (newState == RecyclerView.SCROLL_STATE_IDLE) maybeAutoAdvance(recyclerView)
                         super.onScrollStateChanged(recyclerView, newState)
                     }
 
                     override fun onScrolled(v: RecyclerView, dx: Int, dy: Int) {
+                        // Forward is towards higher items: down/right, or up/left when reversed.
+                        val delta = if (isVerticalReader()) dy else dx
+                        if (if (directionRLBT) delta < 0 else delta > 0) movedForward = true
+                        // Auto-scroll uses scrollBy, which never leaves SCROLL_STATE_IDLE.
+                        if (v.scrollState == RecyclerView.SCROLL_STATE_IDLE) maybeAutoAdvance(v)
                         defaultSettings.apply {
                             if (
                                 ((direction == TOP_TO_BOTTOM || direction == BOTTOM_TO_TOP)
@@ -741,6 +754,31 @@ class MangaReaderActivity : AppCompatActivity() {
         }
         // Start or stop auto-scroll whenever settings are applied
         startAutoScroll()
+    }
+
+    private fun isVerticalReader() = defaultSettings.direction == TOP_TO_BOTTOM ||
+            defaultSettings.direction == BOTTOM_TO_TOP
+
+    /**
+     * Opens the next chapter once the reader has scrolled to the end of this one and the last
+     * page has finished loading, so continuous reading needs no overscroll pull.
+     */
+    private fun maybeAutoAdvance(rv: RecyclerView) {
+        if (autoAdvanced || !movedForward || defaultSettings.layout == PAGED) return
+        val forward = if (directionRLBT) -1 else 1
+        val atEnd = if (isVerticalReader()) !rv.canScrollVertically(forward)
+        else !rv.canScrollHorizontally(forward)
+        if (!atEnd) return
+        val last = (rv.adapter?.itemCount ?: return) - 1
+        if (last < 0) return
+        val lastView = rv.layoutManager?.findViewByPosition(last) ?: return
+        // Still showing the loading spinner: the page would be skipped unseen.
+        if (lastView.findViewById<View>(R.id.imgProgProgress)?.visibility == View.VISIBLE) return
+        if (chaptersArr.size <= currentChapterIndex + 1) return
+        autoAdvanced = true
+        // The "next" button is mirrored for reversed directions; use whichever moves forward.
+        if (directionRLBT) binding.mangaReaderPreviousChapter.performClick()
+        else binding.mangaReaderNextChapter.performClick()
     }
 
     // ── Auto-scroll ──────────────────────────────────────────────────────────

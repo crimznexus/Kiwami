@@ -377,23 +377,30 @@
 
     <!-- Liquid Glass Theme (iOS 26 inspired) -->
     <style name="Theme.Dantotsu.LiquidGlass" parent="Theme.Base">
-        <!-- Primary colors - Frosted glass cyan tint -->
-        <item name="colorPrimary">#80E3F2FD</item>
-        <item name="colorOnPrimary">#1A237E</item>
+        <!-- The accent colours are opaque on purpose. The app uses colorPrimary and
+             colorSecondary mostly as foreground (about 150 text colours and icon tints),
+             and as 50%-alpha pastels they were roughly 1.1:1 against the #FAFAFA
+             background: titles, tabs, icons and links were effectively invisible.
+             These are Material's 600/800 shades, 4.5:1 or better on the background.
+             The glass tint lives in the *Container colours below, which are only ever
+             filled behind dark on-container text. -->
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorPrimaryContainer">#B3E3F2FD</item>
         <item name="colorOnPrimaryContainer">#0D47A1</item>
-        
-        <!-- Secondary colors - Subtle glass gray -->
-        <item name="colorSecondary">#80ECEFF1</item>
-        <item name="colorOnSecondary">#37474F</item>
+
+        <item name="colorSecondary">#546E7A</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
         <item name="colorSecondaryContainer">#B3CFD8DC</item>
         <item name="colorOnSecondaryContainer">#263238</item>
-        
-        <!-- Tertiary - Light glass accent -->
-        <item name="colorTertiary">#80B3E5FC</item>
-        <item name="colorOnTertiary">#01579B</item>
+
+        <item name="colorTertiary">#0277BD</item>
+        <item name="colorOnTertiary">#FFFFFF</item>
         <item name="colorTertiaryContainer">#B3B3E5FC</item>
         <item name="colorOnTertiaryContainer">#0277BD</item>
+
+        <!-- Dark status-bar icons: the light theme's status bar sits on a light background. -->
+        <item name="android:windowLightStatusBar">true</item>
         
         <!-- Error colors -->
         <item name="colorError">#B3FFCDD2</item>
@@ -414,8 +421,9 @@
         <item name="colorSurfaceVariant">#E3F2FD</item>
         <item name="colorOnSurfaceVariant">#37474F</item>
         
-        <!-- Outline - Subtle glass edge -->
-        <item name="colorOutline">#4090CAF9</item>
+        <!-- Outline: used as text and icon tint on the login screen as well as for edges,
+             so it has to be solid and readable (4.6:1), not a 25%-alpha tint. -->
+        <item name="colorOutline">#607D8B</item>
         <item name="colorOnSurfaceInverse">#FAFAFA</item>
         <item name="colorSurfaceInverse">#263238</item>
         <item name="colorPrimaryInverse">#90CAF9</item>

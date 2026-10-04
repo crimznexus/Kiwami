@@ -1,6 +1,10 @@
 # Kiwami
 
 <p align="center">
+  <img src="app/src/main/res/drawable-nodpi/kiwami_logo.png" width="128" alt="Kiwami logo">
+</p>
+
+<p align="center">
   <a href="https://github.com/crimznexus/Kiwami/releases/latest">
     <img src="https://img.shields.io/github/v/release/crimznexus/Kiwami?style=for-the-badge&logo=github&color=e0325b&label=Current%20Release" alt="Current Release">
   </a>
@@ -13,7 +17,7 @@
   <a href="./LICENSE.md">
     <img src="https://img.shields.io/badge/License-UPL-blue?style=for-the-badge&logo=open-source-initiative&logoColor=white" alt="License: UPL">
   </a>
-  <img src="https://img.shields.io/badge/Android-6.0%2B-green?style=for-the-badge&logo=android" alt="Android 6.0+">
+  <img src="https://img.shields.io/badge/Android-7.0%2B-green?style=for-the-badge&logo=android" alt="Android 7.0+">
 </p>
 
 > **極み — The pinnacle of Anime & Manga on Android**
@@ -36,9 +40,26 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 
 ## ✨ Changes in Kiwami
 
-- **New identity** — new crimson "K + play" adaptive launcher icon, including a monochrome layer so Android 13+ themed icons work, and legacy raster icons so the launcher icon actually renders on Android 6–7 (upstream shipped no `ic_launcher.png` at all despite `minSdk 23`).
-- **Smaller APK** — the 4.6 MB animated WebP splash (the repo's single largest file) is replaced by a 17 KB raster derived from the icon vector, and the orphaned launcher foreground PNGs are gone. The universal APK drops from 61.2 MB to 56.3 MB; arm64-v8a from 41.5 MB to 36.5 MB.
-- **Buildable F-Droid flavor** — the `google-services`/Crashlytics plugins were being applied project-wide from inside the `google` product flavor, which forced the Firebase-free `fdroid` build to demand a `google-services.json`. They are now applied only when a `google` variant is actually built.
+### Reading
+- **Continuous chapters** — in the scrolling layouts, reaching the end of a chapter opens the next one by itself; no overscroll pull needed (the pull still works).
+- **Next chapter predownloaded by default** — the auto downloader keeps one chapter ahead (adjustable per title in the download sheet, or off), and the reader opens downloaded chapters from storage instead of fetching them again.
+- **Rate-limit aware page loading** — sources that answer "too many requests" no longer show a raw JSON error: reading reports the wait, and downloads queue per source and retry after the requested delay. An empty page list can no longer wipe an already-downloaded chapter.
+
+### Extensions
+- **Current Keiyoushi / Mihon extensions work** — support for extensions built against extensions-lib 1.6 (now nearly all of Keiyoushi, e.g. Hiperdex and MangaDex): the suspend source API (`getSearchManga`, `getMangaUpdate`, …), `SManga`/`SChapter.memo`, OkHttp 5.3 with zstd, and kotlinx-serialization 1.9. An incompatible extension now shows a message instead of crashing the app.
+- **Mihon-style repositories** — add a repository by its protobuf index URL (e.g. `https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.pb`) as well as the older `index.min.json` / `repo.json` forms.
+- **English first** — multi-language extensions start on their English source instead of the first one alphabetically (MangaDex used to open in Afrikaans).
+
+### Interface
+- **New identity** — a crimson hanko seal of 極 as the adaptive launcher icon, with a monochrome layer for Android 13+ themed icons and a matching TV banner.
+- **Readable light theme** — the light Liquid Glass palette no longer draws white text and icons on light surfaces.
+- **My Lists on the anime page** — custom AniList lists are one tap away from both the anime and manga home pages.
+
+### Build
+- **Own package and signing key** — Kiwami installs as `app.kiwami`, next to (not over) ReDantotsu; development builds use `app.kiwami.alpha`.
+- **Smaller APK** — the 4.6 MB animated WebP splash is replaced by a 17 KB raster.
+- **Buildable F-Droid flavor** — the `google-services`/Crashlytics plugins are applied only when a `google` variant is built, so the Firebase-free `fdroid` build no longer demands a `google-services.json`.
+- **Android 7.0+** — `minSdk` is 24 so default interface methods survive in the APK; extensions call them at runtime.
 
 ## 🌟 Inherited from ReDantotsu
 
@@ -59,9 +80,12 @@ These came from ReDantotsu rather than Kiwami:
 
 ## 📥 Installation
 
-1. Download the latest APK from the [Releases](https://github.com/crimznexus/Kiwami/releases) page.
+1. Download an APK from the [latest release](https://github.com/crimznexus/Kiwami/releases/latest):
+   - `Kiwami-arm64-v8a-release.apk` for almost every phone from the last several years,
+   - `Kiwami-armeabi-v7a-release.apk` for older 32-bit phones,
+   - `Kiwami-universal-release.apk` if unsure (larger; also runs on x86_64 emulators).
 2. Enable "Install from unknown sources" if prompted by your device.
-3. Install and enjoy!
+3. Install, log in with AniList, and add an extension repository under **Settings → Extensions**.
 
 ## 🛠️ Building from Source <a name="building-from-source"></a>
 
@@ -84,8 +108,27 @@ The `google` flavor additionally needs an `app/google-services.json` (see `app/g
 ABI splits are enabled, so `app/build/outputs/apk/` contains `armeabi-v7a` and `arm64-v8a` APKs plus a universal one. x86_64 emulators need the **universal** APK:
 
 ```bash
-adb install -r -t app/build/outputs/apk/fdroid/alpha/ReDantotsu-universal-alpha.apk
+adb install -r -t app/build/outputs/apk/fdroid/alpha/Kiwami-universal-alpha.apk
 ```
+
+Alpha builds install as `app.kiwami.alpha`, so they sit next to a release install.
+
+### Release builds
+
+Release builds are signed with a key kept outside the repository. Put its details in `~/.android-keys/kiwami-release.properties` (or point the `KIWAMI_SIGNING` environment variable at another file):
+
+```properties
+storeFile=/path/to/kiwami-release.jks
+storePassword=...
+keyAlias=kiwami
+keyPassword=...
+```
+
+```bash
+./gradlew assembleFdroidRelease
+```
+
+Without that file the release build falls back to the debug key, which Android treats as a different app.
 
 ## 🎯 Features
 

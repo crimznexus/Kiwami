@@ -65,7 +65,9 @@ internal object ExtensionLoader {
     const val ANIME_LIB_VERSION_MAX = 15
 
     const val MANGA_LIB_VERSION_MIN = 1.2
-    const val MANGA_LIB_VERSION_MAX = 1.6 // EXPERIMENT: Keiyoushi is now ~95% lib 1.6
+    // 1.6 needs the suspend source API (CatalogueSource/MangaSource), SManga/SChapter.memo,
+    // OkHttp 5.3 with okhttp-zstd and minSdk 24; see app/build.gradle.
+    const val MANGA_LIB_VERSION_MAX = 1.6
 
     val PACKAGE_FLAGS = PackageManager.GET_CONFIGURATIONS or
             PackageManager.GET_META_DATA or

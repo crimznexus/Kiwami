@@ -28,17 +28,35 @@ android {
     compileSdk 35
 
     defaultConfig {
-        applicationId "app.redantotsu.asr"
+        applicationId "app.kiwami"
         // 24+, not 23: below 24, D8 desugars default interface methods by stripping them from
         // the interface, so extensions (which link against the host's kotlinx.serialization,
         // OkHttp, etc. at runtime) hit AbstractMethodError, e.g. MangaDex on
         // GeneratedSerializer.typeParametersSerializers().
         minSdk 24
         targetSdk 35
-        versionName "1.0.7"
-        versionCode 100000007
+        versionName "1.0.0"
+        versionCode 100000008
         signingConfig signingConfigs.debug
 
+    }
+
+    // Release signing reads a properties file kept outside the repo (storeFile, storePassword,
+    // keyAlias, keyPassword). Point KIWAMI_SIGNING at it, or keep it at the default path.
+    // Without it, release builds fall back to the debug key.
+    def signingProps = new Properties()
+    def signingFile = file(System.getenv("KIWAMI_SIGNING") ?:
+            "${System.getProperty("user.home")}/.android-keys/kiwami-release.properties")
+    if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
+    signingConfigs {
+        if (signingProps.storeFile) {
+            release {
+                storeFile file(signingProps.storeFile)
+                storePassword signingProps.storePassword
+                keyAlias signingProps.keyAlias
+                keyPassword signingProps.keyPassword
+            }
+        }
     }
 
     flavorDimensions += "store"
@@ -57,8 +75,10 @@ android {
 
     buildTypes {
         alpha {
-            // applicationIdSuffix ".beta" // Removed to match exact Firebase package
-            versionNameSuffix ""
+            // Development build: its own package (and debug key) so it installs next to the
+            // release-signed app instead of conflicting with it.
+            applicationIdSuffix ".alpha"
+            versionNameSuffix "-alpha"
             manifestPlaceholders.icon_placeholder = "@mipmap/ic_launcher"
             manifestPlaceholders.icon_placeholder_round = "@mipmap/ic_launcher_round"
             debuggable System.getenv("CI") == null
@@ -75,6 +95,7 @@ android {
             manifestPlaceholders.icon_placeholder = "@mipmap/ic_launcher"
             manifestPlaceholders.icon_placeholder_round = "@mipmap/ic_launcher_round"
             debuggable false
+            signingConfig signingConfigs.findByName("release") ?: signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-gson.pro', 'proguard-rules.pro'
         }
     }

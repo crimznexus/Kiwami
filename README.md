@@ -28,6 +28,7 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 
 ## 📋 Table of Contents
 - [Changes in Kiwami](#-changes-in-kiwami)
+- [AI Page Enhancer](#-ai-page-enhancer)
 - [Inherited from ReDantotsu](#-inherited-from-redantotsu)
 - [Screenshots](#-screenshots)
 - [Installation](#-installation)
@@ -62,6 +63,21 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 - **Buildable F-Droid flavor** — the `google-services`/Crashlytics plugins are applied only when a `google` variant is built, so the Firebase-free `fdroid` build no longer demands a `google-services.json`.
 - **Android 7.0+** — `minSdk` is 24 so default interface methods survive in the APK; extensions call them at runtime.
 
+## 🪄 AI Page Enhancer
+
+Low-resolution or JPEG-mangled manhwa can be cleaned up on the phone itself, no server involved.
+
+1. Download a chapter.
+2. Tap its delete icon and choose **Enhance pages**.
+3. Read it as usual once the notification says it is done.
+
+- **What it does:** runs the [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) `animevideov3` model (bundled, ~2.5 MB) to upscale pages up to 2x (at most 1600 px wide) and remove blur and compression blocks.
+- **Where the result goes:** enhanced pages **replace** the downloaded ones and stay until the chapter is deleted. Expect an enhanced chapter to take roughly 3–5x the storage.
+- **Speed:** it times the phone's GPU/NPU (NNAPI) against its CPU on first use and keeps the faster one. Expect several seconds to a few tens of seconds per page, so a chapter takes minutes; it runs in the background with a cancellable notification and resumes if interrupted.
+- **Only for downloaded chapters**, so online reading is unaffected.
+
+The model is converted from the official weights with [`tools/enhance/convert_realesr.py`](tools/enhance/convert_realesr.py); its BSD-3 license ships in `app/src/main/assets/enhance/`.
+
 ## 🌟 Inherited from ReDantotsu
 
 These came from ReDantotsu rather than Kiwami:
@@ -85,6 +101,8 @@ These came from ReDantotsu rather than Kiwami:
    - `Kiwami-arm64-v8a-release.apk` for almost every phone from the last several years,
    - `Kiwami-armeabi-v7a-release.apk` for older 32-bit phones,
    - `Kiwami-universal-release.apk` if unsure (larger; also runs on x86_64 emulators).
+
+   Updates install over the previous version, since every release is signed with the same key.
 2. Enable "Install from unknown sources" if prompted by your device.
 3. Install, log in with AniList, and add an extension repository under **Settings → Extensions**.
 
@@ -130,6 +148,14 @@ keyPassword=...
 ```
 
 Without that file the release build falls back to the debug key, which Android treats as a different app.
+
+### Tests
+
+Instrumented tests (currently the page enhancer) run on a connected device or emulator:
+
+```bash
+./gradlew connectedFdroidAlphaAndroidTest
+```
 
 ## 🎯 Features
 

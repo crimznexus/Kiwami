@@ -4,6 +4,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.documentfile.provider.DocumentFile
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import net.greypanther.natsort.CaseInsensitiveSimpleNaturalComparator
 
 /**
@@ -39,31 +43,48 @@ class ChapterEnhancer(private val context: Context) {
             .filter { it.isFile && it.name?.startsWith(".") == false }
             .sortedWith { a, b -> comparator.compare(a.name!!, b.name!!) }
 
-        pages.forEachIndexed { index, page ->
-            checkCancelled()
-            val name = page.name!!
-            if (name in state) return@forEachIndexed
-            onPage(index, pages.size, 0f)
+        // Decoding the next page and saving the last one run beside the model: one thread
+        // each, so saves stay in order (the crash-safe swap relies on it) and at most one
+        // finished page waits in memory.
+        val todo = pages.withIndex().filter { it.value.name !in state }
+        val reader = Executors.newSingleThreadExecutor()
+        val writer = Executors.newSingleThreadExecutor()
+        try {
+            var nextDecode = todo.firstOrNull()?.let { reader.submit<Bitmap?> { decode(it.value) } }
+            var lastWrite: Future<*>? = null
+            todo.forEachIndexed { k, (index, page) ->
+                checkCancelled()
+                onPage(index, pages.size, 0f)
+                val original = nextDecode!!.get()
+                nextDecode = todo.getOrNull(k + 1)?.let { next -> reader.submit<Bitmap?> { decode(next.value) } }
 
-            val original = resolver.openInputStream(page.uri)?.use {
-                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply {
-                    inPreferredConfig = Bitmap.Config.ARGB_8888
-                })
+                // Pages that cannot be decoded or are too large are left as they are.
+                val enhanced = original?.let { bitmap ->
+                    enhancer.enhance(
+                        bitmap,
+                        onProgress = { onPage(index, pages.size, it) },
+                        checkCancelled = checkCancelled,
+                    ).also { bitmap.recycle() }
+                }
+                lastWrite?.get()
+                val name = page.name!!
+                lastWrite = writer.submit {
+                    if (enhanced != null) {
+                        swapIn(dir, page, enhanced, state)
+                        enhanced.recycle()
+                    }
+                    state += name
+                    writeMarker(dir, state)
+                }
             }
-            val enhanced = original?.let { bitmap ->
-                enhancer.enhance(
-                    bitmap,
-                    onProgress = { onPage(index, pages.size, it) },
-                    checkCancelled = checkCancelled,
-                ).also { bitmap.recycle() }
-            }
-            // Pages that cannot be decoded or are too large are left as they are.
-            if (enhanced != null) {
-                swapIn(dir, page, enhanced, state)
-                enhanced.recycle()
-            }
-            state += name
-            writeMarker(dir, state)
+            lastWrite?.get()
+        } catch (e: ExecutionException) {
+            throw e.cause ?: e
+        } finally {
+            reader.shutdownNow()
+            // Let a save in progress finish rather than cutting it off mid-file.
+            writer.shutdown()
+            writer.awaitTermination(1, TimeUnit.MINUTES)
         }
         state += COMPLETE
         writeMarker(dir, state)
@@ -110,6 +131,13 @@ class ChapterEnhancer(private val context: Context) {
         state.removeAll { it.startsWith(PENDING) }
         writeMarker(dir, state)
     }
+
+    private fun decode(page: DocumentFile): Bitmap? =
+        resolver.openInputStream(page.uri)?.use {
+            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply {
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            })
+        }
 
     private fun copy(from: DocumentFile, to: DocumentFile) {
         resolver.openInputStream(from.uri)!!.use { input ->

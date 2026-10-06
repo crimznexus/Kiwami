@@ -44,7 +44,7 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 ### Reading
 - **Continuous chapters** — in the scrolling layouts, reaching the end of a chapter opens the next one by itself; no overscroll pull needed (the pull still works).
 - **Next chapter predownloaded by default** — the auto downloader keeps one chapter ahead (adjustable per title in the download sheet, or off), and the reader opens downloaded chapters from storage instead of fetching them again.
-- **AI page enhancer** — **Options (☰) → AI enhance** on a manga's chapter list upscales and cleans pages with an on-device Real-ESRGAN anime model (up to 2x, max 1600 px wide): all downloaded chapters at once, or chosen chapters, downloading any that aren't stored yet first. It runs in the background with a cancellable notification, resumes if interrupted, and replaces the downloaded pages; deleting the chapter removes them.
+- **AI page enhancer** — **Options (☰) → AI enhance** on a manga's chapter list upscales and cleans pages with an on-device Real-ESRGAN anime model (up to 2x, max 1600 px wide): all downloaded chapters at once, or chosen chapters, downloading any that aren't stored yet first. It runs on the phone's GPU (Vulkan) where it can, in the background with a cancellable notification, resumes if interrupted, and replaces the downloaded pages; deleting the chapter removes them.
 - **Rate-limit aware page loading** — sources that answer "too many requests" no longer show a raw JSON error: reading reports the wait, and downloads queue per source and retry after the requested delay. An empty page list can no longer wipe an already-downloaded chapter.
 
 ### Extensions
@@ -75,7 +75,7 @@ Low-resolution or JPEG-mangled manhwa can be cleaned up on the phone itself, no 
 
 - **What it does:** runs the [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) `animevideov3` model (bundled, ~2.5 MB) to upscale pages up to 2x (at most 1600 px wide) and remove blur and compression blocks.
 - **Where the result goes:** enhanced pages **replace** the downloaded ones and stay until the chapter is deleted. Expect an enhanced chapter to take roughly 3–5x the storage.
-- **Speed:** it times the phone's GPU/NPU (NNAPI) against its CPU on first use and keeps the faster one. Expect several seconds to a few tens of seconds per page, so a chapter takes minutes; it runs in the background with a cancellable notification and resumes if interrupted.
+- **Speed:** it runs on the phone's GPU through Vulkan ([ncnn](https://github.com/Tencent/ncnn)) where it can, and otherwise on the fastest CPU path. Each engine is timed on first use and the winner is remembered. Blank gutters and flat areas skip the model entirely. On an emulator borrowing a desktop GPU a typical page takes about 2 seconds (it was about 8 on the CPU); real phones vary. It runs in the background with a cancellable notification and resumes if interrupted.
 - **Works on stored pages**, so online reading is unaffected.
 
 The model is converted from the official weights with [`tools/enhance/convert_realesr.py`](tools/enhance/convert_realesr.py); its BSD-3 license ships in `app/src/main/assets/enhance/`.
@@ -110,11 +110,16 @@ These came from ReDantotsu rather than Kiwami:
 
 ## 🛠️ Building from Source <a name="building-from-source"></a>
 
-**Requires JDK 21.** Gradle 8.11.1's bundled Kotlin compiler cannot parse a Java 25+ version string and fails with a bare `IllegalArgumentException: 25.0.2`, which names no file and gives no hint that the JDK is the problem.
+**Requires JDK 21**, plus the Android **NDK 27.0.12077973** and **CMake 3.22.1** (Android Studio's SDK Manager, or `sdkmanager "ndk;27.0.12077973" "cmake;3.22.1"`) for the enhancer's native code.
+
+**About JDK 21:** Gradle 8.11.1's bundled Kotlin compiler cannot parse a Java 25+ version string and fails with a bare `IllegalArgumentException: 25.0.2`, which names no file and gives no hint that the JDK is the problem.
 
 ```bash
 git clone https://github.com/crimznexus/Kiwami.git
 cd Kiwami
+
+# Native dependency of the page enhancer's GPU path (once; kept out of git)
+sh tools/enhance/fetch_ncnn.sh
 
 # Build the F-Droid flavor — no Firebase config needed
 ./gradlew assembleFdroidAlpha

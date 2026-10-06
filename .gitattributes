@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Model files must stay byte-for-byte as released; shell scripts need LF to run.
+*.param -text
+*.bin binary
+*.onnx binary
+*.sh text eol=lf

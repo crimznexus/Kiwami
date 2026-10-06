@@ -132,7 +132,6 @@ import ani.dantotsu.media.Media
 import ani.dantotsu.media.MediaDetailsViewModel
 import ani.dantotsu.media.MediaNameAdapter
 import ani.dantotsu.media.MediaType
-import ani.dantotsu.media.SubtitleDownloader
 import ani.dantotsu.okHttpClient
 import ani.dantotsu.others.AniSkip
 import ani.dantotsu.others.AniSkip.getType
@@ -171,7 +170,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.Calendar
@@ -1541,25 +1539,18 @@ class ExoplayerView :
             val subtitleUrl = if (!hasExtSubtitles) video!!.file.url else subtitle.file.url
             // var localFile: String? = null
             if (subtitle.type == SubtitleType.UNKNOWN) {
-                runBlocking {
-                    val type = SubtitleDownloader.loadSubtitleType(subtitleUrl)
-                    val fileUri = Uri.parse(subtitleUrl)
-                    sub +=
-                        MediaItem.SubtitleConfiguration
-                            .Builder(fileUri)
-                            .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
-                            .setMimeType(
-                                when (type) {
-                                    SubtitleType.VTT -> MimeTypes.TEXT_SSA
-                                    SubtitleType.ASS -> MimeTypes.TEXT_SSA
-                                    SubtitleType.SRT -> MimeTypes.TEXT_SSA
-                                    else -> MimeTypes.TEXT_SSA
-                                },
-                            ).setId("69")
-                            .setLanguage(subtitle.language)
-                            .build()
-                }
-                println("sub: $sub")
+                // Upstream downloaded each such subtitle here, inside runBlocking on the main
+                // thread, just to sniff its format, and then used TEXT_SSA whatever it found.
+                // With a source offering many subtitle tracks that froze the player long enough
+                // for an "app not responding" error, so the pointless download is gone.
+                sub +=
+                    MediaItem.SubtitleConfiguration
+                        .Builder(Uri.parse(subtitleUrl))
+                        .setSelectionFlags(C.SELECTION_FLAG_DEFAULT)
+                        .setMimeType(MimeTypes.TEXT_SSA)
+                        .setId("69")
+                        .setLanguage(subtitle.language)
+                        .build()
             } else {
                 val subUri = Uri.parse(subtitleUrl)
                 sub +=

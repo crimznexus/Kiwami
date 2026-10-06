@@ -431,8 +431,10 @@
 
     <!-- Liquid Glass OLED Theme (Dark glass) -->
     <style name="Theme.Dantotsu.LiquidGlassOLED" parent="Theme.Base">
-        <!-- Primary colors - Dark frosted glass -->
-        <item name="colorPrimary">#801A237E</item>
+        <!-- Primary colors - Dark frosted glass. Opaque on purpose: the player's cast button
+             (androidx.mediarouter) throws on a translucent colorPrimary, crashing the anime
+             player. This is the 50%-alpha #801A237E it used to be, pre-blended over black. -->
+        <item name="colorPrimary">#0D123F</item>
         <item name="colorOnPrimary">#E3F2FD</item>
         <item name="colorPrimaryContainer">#B31A237E</item>
         <item name="colorOnPrimaryContainer">#BBDEFB</item>

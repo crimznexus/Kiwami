@@ -303,8 +303,11 @@
          structure with a dark frosted palette; the OLED variant in values/ stays true
          black and is selected separately via UseOLED. -->
     <style name="Theme.Dantotsu.LiquidGlass" parent="Theme.Base">
-        <!-- Primary - ice-blue glass on dark -->
-        <item name="colorPrimary">#8090CAF9</item>
+        <!-- Primary - ice-blue glass on dark. Opaque on purpose: the player's cast button
+             (androidx.mediarouter) computes contrast from colorPrimary and throws on a
+             translucent one, crashing the anime player. This is the 50%-alpha #8090CAF9 it
+             used to be, pre-blended over the #121212 background, so it looks the same. -->
+        <item name="colorPrimary">#516E86</item>
         <item name="colorOnPrimary">#0D1B3E</item>
         <item name="colorPrimaryContainer">#B31A237E</item>
         <item name="colorOnPrimaryContainer">#BBDEFB</item>

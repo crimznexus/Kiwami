@@ -4,6 +4,7 @@ import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.providers.NNAPIFlags
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -257,12 +258,13 @@ class PageEnhancer private constructor(
             val assets = Assets(context)
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             // A new app version or a changed set of backends means benchmarking again.
-            val version = "${BuildConfig.VERSION_CODE}/${BACKENDS.joinToString(",")}"
+            val version = backendVersion()
+            val crashed = crashedBackends(prefs, version)
             prefs.getString(KEY_BACKEND, null)?.split("@", limit = 2)?.takeIf { it.size == 2 }?.let { (name, savedVersion) ->
-                if (savedVersion == version) {
+                if (savedVersion == version && name !in crashed) {
                     open(assets, name)?.let { enhancer ->
                         try {
-                            enhancer.run(FloatArray(3 * TILE * TILE) { 0.5f })
+                            guarded(prefs, name, version) { enhancer.run(FloatArray(3 * TILE * TILE) { 0.5f }) }
                             return enhancer
                         } catch (e: Exception) {
                             Logger.log("PageEnhancer: remembered $name failed, benchmarking again: $e")
@@ -275,13 +277,19 @@ class PageEnhancer private constructor(
             var best: PageEnhancer? = null
             var bestTime = Long.MAX_VALUE
             for (name in BACKENDS) {
-                val enhancer = open(assets, name) ?: continue
+                if (name in crashed) {
+                    Logger.log("PageEnhancer: skipping $name, it crashed the app before")
+                    continue
+                }
+                val enhancer = guarded(prefs, name, version) { open(assets, name) } ?: continue
                 val time = try {
-                    val tile = FloatArray(3 * TILE * TILE) { 0.5f }
-                    enhancer.run(tile) // warm-up; NNAPI compiles on first use
-                    val start = System.nanoTime()
-                    enhancer.run(tile)
-                    System.nanoTime() - start
+                    guarded(prefs, name, version) {
+                        val tile = FloatArray(3 * TILE * TILE) { 0.5f }
+                        enhancer.run(tile) // warm-up; NNAPI compiles on first use
+                        val start = System.nanoTime()
+                        enhancer.run(tile)
+                        System.nanoTime() - start
+                    }
                 } catch (e: Exception) {
                     Logger.log("PageEnhancer: $name failed its test run: $e")
                     enhancer.close()
@@ -297,6 +305,39 @@ class PageEnhancer private constructor(
             best ?: throw IllegalStateException("No usable backend for the page enhancer")
             prefs.edit().putString(KEY_BACKEND, "${best.backend}@$version").apply()
             return best
+        }
+
+        /** Remembered choices and crash records are only valid for this version and backend list. */
+        internal fun backendVersion() = "${BuildConfig.VERSION_CODE}/${BACKENDS.joinToString(",")}"
+
+        internal const val PREFS_NAME = PREFS
+        internal const val KEY_TRYING = "trying"
+        private const val KEY_CRASHED = "crashed"
+
+        /**
+         * Runs [block] with [name] recorded as the engine being tried. A GPU driver fault in
+         * native code kills the process instead of throwing, so if the record is still there
+         * on the next start (see [crashedBackends]), that engine crashed the app.
+         */
+        private inline fun <T> guarded(prefs: SharedPreferences, name: String, version: String, block: () -> T): T {
+            prefs.edit().putString(KEY_TRYING, "$name@$version").commit() // must land before the native call
+            try {
+                return block()
+            } finally {
+                prefs.edit().remove(KEY_TRYING).commit()
+            }
+        }
+
+        /** Engines that crashed the app on this version; they are not tried again until an update. */
+        private fun crashedBackends(prefs: SharedPreferences, version: String): Set<String> {
+            val crashed = prefs.getStringSet(KEY_CRASHED, emptySet())!!
+                .filter { it.endsWith("@$version") }.toMutableSet()
+            prefs.getString(KEY_TRYING, null)?.let { leftOver ->
+                if (leftOver.endsWith("@$version")) crashed += leftOver
+                Logger.log("PageEnhancer: ${leftOver.substringBefore("@")} crashed the app last time; it will be skipped")
+            }
+            prefs.edit().remove(KEY_TRYING).putStringSet(KEY_CRASHED, crashed).commit()
+            return crashed.map { it.substringBefore("@") }.toSet()
         }
 
         private const val GPU = "GPU (Vulkan)"

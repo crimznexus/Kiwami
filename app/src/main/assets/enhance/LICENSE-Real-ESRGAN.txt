@@ -2,6 +2,9 @@ realesr-animevideov3.onnx is converted (tools/enhance/convert_realesr.py) from
 realesr-animevideov3.pth, released by the Real-ESRGAN project:
 https://github.com/xinntao/Real-ESRGAN (release v0.2.5.0)
 
+realesr-animevideov3-x4.param / .bin are the same model in ncnn format, taken unchanged from
+realesrgan-ncnn-vulkan-20220424-windows.zip in that release.
+
 BSD 3-Clause License
 
 Copyright (c) 2021, Xintao Wang

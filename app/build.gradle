@@ -40,6 +40,22 @@ android {
         signingConfig signingConfigs.debug
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        // Page enhancer's GPU path (src/main/cpp, ncnn + Vulkan). Built for the ABIs that ship;
+        // 32-bit x86 is dropped from the APKs anyway (see packaging).
+        externalNativeBuild {
+            cmake {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+                arguments '-DANDROID_STL=c++_static'
+            }
+        }
+    }
+
+    ndkVersion "27.0.12077973"
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
     }
 
     // Release signing reads a properties file kept outside the repo (storeFile, storePassword,
@@ -135,7 +151,10 @@ android {
         abi {
             enable true
             reset()
-            include 'armeabi-v7a', 'arm64-v8a'
+            // x86_64 is here for emulators: native code (src/main/cpp) is only built for the
+            // ABIs listed, so without it the universal APK would lack the enhancer's GPU library.
+            // Its split APK is not published.
+            include 'armeabi-v7a', 'arm64-v8a', 'x86_64'
             universalApk true  // Also generate a universal APK
         }
     }

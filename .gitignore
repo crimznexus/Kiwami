@@ -77,3 +77,5 @@ crowdin.yml
 .vscode
 google-services.json
 app/google-services.json
+# Native dependencies fetched by tools/enhance/fetch_ncnn.sh
+/third_party/

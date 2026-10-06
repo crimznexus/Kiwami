@@ -1,6 +1,5 @@
 package ani.dantotsu.download.manga.enhance
 
-import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.providers.NNAPIFlags
@@ -12,7 +11,6 @@ import android.graphics.Rect
 import ani.dantotsu.BuildConfig
 import ani.dantotsu.util.Logger
 import java.io.Closeable
-import java.nio.FloatBuffer
 import java.util.EnumSet
 import kotlin.math.max
 import kotlin.math.min
@@ -28,13 +26,12 @@ import kotlin.math.sqrt
  * x4 result is then scaled to the target size, normally 2x and at most [MAX_WIDTH] wide.
  */
 class PageEnhancer private constructor(
-    private val env: OrtEnvironment,
-    private val session: OrtSession,
+    private val model: TileModel,
     /** Which execution path won the start-up benchmark, for logs and the notification. */
     val backend: String,
-    /** The backend only takes [TILE]-sized input (NNAPI); otherwise tiles are cut to fit. */
-    private val fixedShape: Boolean,
 ) : Closeable {
+    /** The backend only takes [TILE]-sized input (NNAPI); otherwise tiles are cut to fit. */
+    private val fixedShape get() = model.fixedShape
 
     /**
      * Enhanced copy of [page], or null when the page is too large to process safely (it is
@@ -217,19 +214,15 @@ class PageEnhancer private constructor(
         return bands
     }
 
-    private fun run(tile: FloatArray, tw: Int = TILE, th: Int = TILE): FloatArray =
-        OnnxTensor.createTensor(env, FloatBuffer.wrap(tile, 0, 3 * tw * th), longArrayOf(1, 3, th.toLong(), tw.toLong()))
-            .use { tensor ->
-                session.run(mapOf("input" to tensor)).use { result ->
-                    val buffer = (result[0] as OnnxTensor).floatBuffer
-                    FloatArray(buffer.remaining()).also { buffer.get(it) }
-                }
-            }
+    private fun run(tile: FloatArray, tw: Int = TILE, th: Int = TILE): FloatArray = model.run(tile, tw, th)
 
-    override fun close() = session.close()
+    override fun close() = model.close()
 
     companion object {
         private const val MODEL_ASSET = "enhance/realesr-animevideov3.onnx"
+        // The same network in ncnn's format, from the official realesrgan-ncnn-vulkan release.
+        private const val NCNN_PARAM_ASSET = "enhance/realesr-animevideov3-x4.param"
+        private const val NCNN_BIN_ASSET = "enhance/realesr-animevideov3-x4.bin"
         private const val SCALE = 4
         // 216 = 200 + 2 * PAD, so a page reduced to MODEL_INPUT_WIDTH (600) is exactly three
         // tiles wide; 192 needed four, the last one mostly empty.
@@ -255,19 +248,19 @@ class PageEnhancer private constructor(
         private const val KEY_BACKEND = "backend"
 
         /**
-         * Loads the model on the fastest execution path for this device. NNAPI (GPU/NPU,
-         * fp16) is much faster where it is supported but slower or broken on some phones, so
-         * every path is timed on a real tile once; the winner is remembered (per app version)
-         * so later runs skip that benchmark, which takes several seconds.
+         * Loads the model on the fastest execution path for this device: the GPU through
+         * Vulkan (ncnn) where there is one, otherwise the best CPU path. Paths are timed on a
+         * real tile once and the winner is remembered (per app version), so later runs skip
+         * that benchmark, which takes several seconds.
          */
         fun create(context: Context): PageEnhancer {
-            val model = context.assets.open(MODEL_ASSET).use { it.readBytes() }
-            val env = OrtEnvironment.getEnvironment()
+            val assets = Assets(context)
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val version = BuildConfig.VERSION_CODE
-            prefs.getString(KEY_BACKEND, null)?.split("@")?.let { (name, savedVersion) ->
-                if (savedVersion == version.toString()) {
-                    open(env, model, name)?.let { enhancer ->
+            // A new app version or a changed set of backends means benchmarking again.
+            val version = "${BuildConfig.VERSION_CODE}/${BACKENDS.joinToString(",")}"
+            prefs.getString(KEY_BACKEND, null)?.split("@", limit = 2)?.takeIf { it.size == 2 }?.let { (name, savedVersion) ->
+                if (savedVersion == version) {
+                    open(assets, name)?.let { enhancer ->
                         try {
                             enhancer.run(FloatArray(3 * TILE * TILE) { 0.5f })
                             return enhancer
@@ -282,7 +275,7 @@ class PageEnhancer private constructor(
             var best: PageEnhancer? = null
             var bestTime = Long.MAX_VALUE
             for (name in BACKENDS) {
-                val enhancer = open(env, model, name) ?: continue
+                val enhancer = open(assets, name) ?: continue
                 val time = try {
                     val tile = FloatArray(3 * TILE * TILE) { 0.5f }
                     enhancer.run(tile) // warm-up; NNAPI compiles on first use
@@ -306,10 +299,30 @@ class PageEnhancer private constructor(
             return best
         }
 
-        private val BACKENDS = listOf("NNAPI", "CPU", "CPU (basic)")
+        private const val GPU = "GPU (Vulkan)"
+        private const val NCNN_CPU = "CPU (ncnn)"
+        private val BACKENDS = listOf(GPU, NCNN_CPU, "NNAPI", "CPU", "CPU (basic)")
 
-        /** A session on the named execution path, or null when this device cannot run it. */
-        private fun open(env: OrtEnvironment, model: ByteArray, name: String): PageEnhancer? {
+        /** Model files, read from the APK only when a backend needs them. */
+        private class Assets(private val context: Context) {
+            val onnx by lazy { read(MODEL_ASSET) }
+            val ncnnParam by lazy { read(NCNN_PARAM_ASSET) }
+            val ncnnBin by lazy { read(NCNN_BIN_ASSET) }
+            private fun read(name: String) = context.assets.open(name).use { it.readBytes() }
+        }
+
+        /** The model on the named execution path, or null when this device cannot run it. */
+        private fun open(assets: Assets, name: String): PageEnhancer? {
+            if (name == GPU || name == NCNN_CPU) {
+                return try {
+                    NcnnTileModel.create(assets.ncnnParam, assets.ncnnBin, gpu = name == GPU)
+                        ?.let { PageEnhancer(it, name) }
+                } catch (e: Exception) {
+                    Logger.log("PageEnhancer: $name unavailable: $e")
+                    null
+                }
+            }
+            val env = OrtEnvironment.getEnvironment()
             val cores = Runtime.getRuntime().availableProcessors().coerceIn(1, 8)
             val fixed = name == "NNAPI"
             return try {
@@ -329,7 +342,7 @@ class PageEnhancer private constructor(
                         else -> setIntraOpNumThreads(cores)
                     }
                 }
-                PageEnhancer(env, env.createSession(model, options), name, fixed)
+                PageEnhancer(OrtTileModel(env, env.createSession(assets.onnx, options), fixed), name)
             } catch (e: Exception) {
                 Logger.log("PageEnhancer: $name unavailable: $e")
                 null

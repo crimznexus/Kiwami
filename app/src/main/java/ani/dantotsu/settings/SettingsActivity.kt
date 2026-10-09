@@ -187,13 +187,11 @@ class SettingsActivity : AppCompatActivity() {
                 setHasFixedSize(true)
             }
 
-            if (!BuildConfig.FLAVOR.contains("fdroid")) {
-                settingsLogo.setOnLongClickListener {
-                    lifecycleScope.launch(Dispatchers.IO) {
-                        AppUpdater.check(this@SettingsActivity, true)
-                    }
-                    true
+            settingsLogo.setOnLongClickListener {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    AppUpdater.check(this@SettingsActivity, true)
                 }
+                true
             }
 
             settingPatreon.setOnClickListener {

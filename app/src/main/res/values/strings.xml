@@ -981,6 +981,8 @@ Non quae tempore quo provident laudantium qui illo dolor vel quia dolor et exerc
     <string name="about_desc">Learn more about Kiwami</string>
     <string name="faq_desc">General questions about Kiwami</string>
     <string name="check_app_updates_desc">Check Github for app updates</string>
+    <string name="check_for_updates_now">Check for updates now</string>
+    <string name="check_for_updates_now_desc">Installed version %1$s. Downloads and installs newer Kiwami releases from GitHub.</string>
     <string name="share_username_in_crash_reports_desc">Share username in crash reports</string>
     <string name="devs_desc">Kiwami/Dantotsu\'s very own unpaid labours </string>
     <string name="redantotsu_section">ReDantotsu</string>

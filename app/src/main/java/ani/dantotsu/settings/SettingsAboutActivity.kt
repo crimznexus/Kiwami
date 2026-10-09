@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.updateLayoutParams
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import ani.dantotsu.BuildConfig
 import ani.dantotsu.R
@@ -15,6 +16,7 @@ import ani.dantotsu.client
 import ani.dantotsu.databinding.ActivitySettingsAboutBinding
 import ani.dantotsu.initActivity
 import ani.dantotsu.navBarHeight
+import ani.dantotsu.others.AppUpdater
 import ani.dantotsu.others.CustomBottomDialog
 import ani.dantotsu.restartApp
 import ani.dantotsu.settings.saving.PrefManager
@@ -64,8 +66,18 @@ class SettingsAboutActivity : AppCompatActivity() {
                         isChecked = PrefManager.getVal(PrefName.CheckUpdate),
                         switch = { isChecked, _ ->
                             PrefManager.setVal(PrefName.CheckUpdate, isChecked)
-                        },
-                        isVisible = !BuildConfig.FLAVOR.contains("fdroid")
+                        }
+                    ),
+                    Settings(
+                        type = 1,
+                        name = getString(R.string.check_for_updates_now),
+                        desc = getString(R.string.check_for_updates_now_desc, BuildConfig.VERSION_NAME.substringBefore('-')),
+                        icon = R.drawable.ic_round_new_releases_24,
+                        onClick = {
+                            lifecycleScope.launch(Dispatchers.IO) {
+                                AppUpdater.check(this@SettingsAboutActivity, true)
+                            }
+                        }
                     ),
                     Settings(
                         type = 2,

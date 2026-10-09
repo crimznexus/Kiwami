@@ -107,12 +107,10 @@ class AnilistHomeViewModel : ViewModel() {
     suspend fun loadMain(context: FragmentActivity) {
         Anilist.getSavedToken()
         MAL.getSavedToken()
-        if (!BuildConfig.FLAVOR.contains("fdroid")) {
-            if (PrefManager.getVal(PrefName.CheckUpdate))
-                context.lifecycleScope.launch(Dispatchers.IO) {
-                    AppUpdater.check(context, false)
-                }
-        }
+        if (PrefManager.getVal(PrefName.CheckUpdate))
+            context.lifecycleScope.launch(Dispatchers.IO) {
+                AppUpdater.check(context, false)
+            }
         val ret = Anilist.query.getGenresAndTags()
         withContext(Dispatchers.Main) {
             genres.value = ret

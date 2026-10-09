@@ -52,6 +52,9 @@ Kiwami (極み) means "the pinnacle" in Japanese.
 - **Mihon-style repositories** — add a repository by its protobuf index URL (e.g. `https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.pb`) as well as the older `index.min.json` / `repo.json` forms.
 - **English first** — multi-language extensions start on their English source instead of the first one alphabetically (MangaDex used to open in Afrikaans).
 
+### Updates
+- **In-app updates** — Kiwami checks its GitHub releases on launch and offers to download and install the newer APK for your phone's CPU. You can also check manually under **Settings → About → Check for updates now**, or turn the launch check off there.
+
 ### Interface
 - **New identity** — a crimson hanko seal of 極 as the adaptive launcher icon, with a monochrome layer for Android 13+ themed icons and a matching TV banner.
 - **Readable light theme** — the light Liquid Glass palette no longer draws white text and icons on light surfaces.
@@ -105,6 +108,7 @@ These came from ReDantotsu rather than Kiwami:
    - `Kiwami-universal-release.apk` if unsure (larger; also runs on x86_64 emulators).
 
    Updates install over the previous version, since every release is signed with the same key.
+   From 1.0.4 on, the app tells you when a new version is out and installs it for you.
 2. Enable "Install from unknown sources" if prompted by your device.
 3. Install, log in with AniList, and add an extension repository under **Settings → Extensions**.
 

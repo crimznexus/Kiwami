@@ -23,6 +23,11 @@ interface SAnime : Serializable {
 
     var update_strategy: UpdateStrategy
 
+    /** For extensions built against the anime-specific enum. */
+    fun setUpdate_strategy(strategy: AnimeUpdateStrategy) {
+        update_strategy = UpdateStrategy.valueOf(strategy.name)
+    }
+
     var initialized: Boolean
 
     fun getGenres(): List<String>? {

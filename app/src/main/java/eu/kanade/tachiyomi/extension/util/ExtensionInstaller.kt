@@ -1,16 +1,12 @@
 package eu.kanade.tachiyomi.extension.util
 
-import android.app.DownloadManager
 import android.app.ForegroundServiceStartNotAllowedException
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import androidx.core.content.ContextCompat
-import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import ani.dantotsu.R
 import ani.dantotsu.media.AddonType
@@ -28,7 +24,6 @@ import rx.android.schedulers.AndroidSchedulers
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 /**
  * The installer which installs, updates and uninstalls the extensions.
@@ -38,20 +33,16 @@ import java.util.concurrent.TimeUnit
 class ExtensionInstaller(private val context: Context) {
 
     /**
-     * The system's download manager
-     */
-    private val downloadManager = context.getSystemService<DownloadManager>()!!
-
-    /**
-     * The broadcast receiver which listens to download completion events.
-     */
-    private val downloadReceiver = DownloadCompletionReceiver()
-
-    /**
-     * The currently requested downloads, with the package name (unique id) as key, and the id
-     * returned by the download manager.
+     * The currently requested downloads, with the package name (unique id) as key, and our own
+     * download id. The system DownloadManager is not used: Samsung and other vendors park its
+     * jobs ("restricted due to olaf") for minutes, so downloads run in-process instead.
      */
     private val activeDownloads = hashMapOf<String, Long>()
+
+    private val calls = java.util.concurrent.ConcurrentHashMap<Long, okhttp3.Call>()
+    private val files = java.util.concurrent.ConcurrentHashMap<Long, File>()
+    private val nextId = java.util.concurrent.atomic.AtomicLong(1)
+    private val http: okhttp3.OkHttpClient by lazy { Injekt.get<okhttp3.OkHttpClient>() }
 
     /**
      * Relay used to notify the installation step of every download.
@@ -61,8 +52,8 @@ class ExtensionInstaller(private val context: Context) {
     private val extensionInstaller = Injekt.get<BasePreferences>().extensionInstaller()
 
     /**
-     * Adds the given extension to the downloads queue and returns an observable containing its
-     * step in the installation process.
+     * Downloads the given extension APK and installs it, returning an observable of its step in
+     * the installation process.
      *
      * @param url The url of the apk.
      * @param pkgName The package name of the extension.
@@ -75,68 +66,53 @@ class ExtensionInstaller(private val context: Context) {
         name: String,
         type: T
     ): Observable<InstallStep> = Observable.defer {
-        val oldDownload = activeDownloads[pkgName]
-        if (oldDownload != null) {
-            deleteDownload(pkgName)
-        }
+        if (activeDownloads[pkgName] != null) deleteDownload(pkgName)
 
-        downloadReceiver.register()
-
-        val downloadUri = url.toUri()
-        val request = DownloadManager.Request(downloadUri)
-            .setTitle(name)
-            .setMimeType(APK_MIME)
-            .setDestinationInExternalFilesDir(
-                context,
-                Environment.DIRECTORY_DOWNLOADS,
-                downloadUri.lastPathSegment
-            )
-            .setDescription(type.asText())
-            .setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE)
-            .setAllowedOverRoaming(true)
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-
-        val id = downloadManager.enqueue(request)
+        val id = nextId.getAndIncrement()
         activeDownloads[pkgName] = id
+        val fileName = url.toUri().lastPathSegment ?: "$pkgName.apk"
 
-        downloadsRelay.filter { it.first == id }
-            .map { it.second }
-            .mergeWith(pollStatus(id))
+        val events = downloadsRelay.filter { it.first == id }.map { it.second }
+        val start = Observable.fromCallable {
+            Thread({ download(id, url, fileName, type) }, "ext-download-$pkgName").start()
+        }.flatMap { Observable.empty<InstallStep>() }
+
+        Observable.merge(events, start)
             .takeUntil { it.isCompleted() }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnUnsubscribe { deleteDownload(pkgName) }
     }
 
-
-    /**
-     * Returns an observable that polls the given download id for its status every second, as the
-     * manager doesn't have any notification system. It'll stop once the download finishes.
-     *
-     * @param id The id of the download to poll.
-     */
-    private fun pollStatus(id: Long): Observable<InstallStep> {
-        val query = DownloadManager.Query().setFilterById(id)
-
-        return Observable.interval(0, 1, TimeUnit.SECONDS)
-            // Get the current download status
-            .map {
-                downloadManager.query(query).use { cursor ->
-                    cursor.moveToFirst()
-                    cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-                }
+    private fun download(id: Long, url: String, fileName: String, type: Type) {
+        downloadsRelay.call(id to InstallStep.Pending)
+        val dir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.cacheDir
+        dir.mkdirs()
+        val target = File(dir, fileName)
+        val partial = File(dir, "$fileName.part")
+        try {
+            val call = http.newCall(okhttp3.Request.Builder().url(url).build())
+            calls[id] = call
+            files[id] = partial
+            downloadsRelay.call(id to InstallStep.Downloading)
+            call.execute().use { response ->
+                if (!response.isSuccessful) error("HTTP ${response.code}")
+                val body = response.body ?: error("Empty response")
+                partial.outputStream().use { out -> body.byteStream().copyTo(out, 64 * 1024) }
             }
-            // Ignore duplicate results
-            .distinctUntilChanged()
-            // Stop polling when the download fails or finishes
-            .takeUntil { it == DownloadManager.STATUS_SUCCESSFUL || it == DownloadManager.STATUS_FAILED }
-            // Map to our model
-            .flatMap { status ->
-                when (status) {
-                    DownloadManager.STATUS_PENDING -> Observable.just(InstallStep.Pending)
-                    DownloadManager.STATUS_RUNNING -> Observable.just(InstallStep.Downloading)
-                    else -> Observable.empty()
-                }
+            if (id !in calls.keys) return // cancelled while downloading
+            target.delete()
+            if (!partial.renameTo(target)) error("Couldn't move the downloaded APK")
+            files[id] = target
+            installApk(type, id, target.getUriCompat(context))
+        } catch (e: Exception) {
+            partial.delete()
+            if (id in calls.keys) {
+                Logger.log(e)
+                downloadsRelay.call(id to InstallStep.Error)
             }
+        } finally {
+            calls.remove(id)
+        }
     }
 
     /**
@@ -182,7 +158,8 @@ class ExtensionInstaller(private val context: Context) {
      */
     fun cancelInstall(pkgName: String) {
         val downloadId = activeDownloads.remove(pkgName) ?: return
-        downloadManager.remove(downloadId)
+        calls.remove(downloadId)?.cancel()
+        files.remove(downloadId)?.delete()
         Installer.cancelInstallQueue(context, downloadId)
     }
 
@@ -219,82 +196,8 @@ class ExtensionInstaller(private val context: Context) {
     private fun deleteDownload(pkgName: String) {
         val downloadId = activeDownloads.remove(pkgName)
         if (downloadId != null) {
-            downloadManager.remove(downloadId)
-        }
-        if (activeDownloads.isEmpty()) {
-            downloadReceiver.unregister()
-        }
-    }
-
-    /**
-     * Receiver that listens to download status events.
-     */
-    private inner class DownloadCompletionReceiver : BroadcastReceiver() {
-
-        /**
-         * Whether this receiver is currently registered.
-         */
-        private var isRegistered = false
-
-        /**
-         * Registers this receiver if it's not already.
-         */
-        fun register() {
-            if (isRegistered) return
-            isRegistered = true
-
-            val filter = IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
-            ContextCompat.registerReceiver(context, this, filter, ContextCompat.RECEIVER_EXPORTED)
-        }
-
-        /**
-         * Unregisters this receiver if it's not already.
-         */
-        fun unregister() {
-            if (!isRegistered) return
-            isRegistered = false
-
-            context.unregisterReceiver(this)
-        }
-
-        /**
-         * Called when a download event is received. It looks for the download in the current active
-         * downloads and notifies its installation step.
-         */
-        override fun onReceive(context: Context, intent: Intent?) {
-            val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0) ?: return
-
-            // Avoid events for downloads we didn't request
-            if (id !in activeDownloads.values) return
-
-            val uri = downloadManager.getUriForDownloadedFile(id)
-
-            // Set next installation step
-            if (uri == null) {
-                Logger.log("Couldn't locate downloaded APK")
-                downloadsRelay.call(id to InstallStep.Error)
-                return
-            }
-
-            val query = DownloadManager.Query().setFilterById(id)
-            downloadManager.query(query).use { cursor ->
-                if (cursor.moveToFirst()) {
-                    val localUri = cursor.getString(
-                        cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_LOCAL_URI),
-                    ).removePrefix(FILE_SCHEME)
-                    val type = MediaType.fromText(
-                        cursor.getString(
-                            cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_DESCRIPTION),
-                        )
-                    ) ?: AddonType.fromText(
-                        cursor.getString(
-                            cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_DESCRIPTION),
-                        )
-                    ) ?: return
-
-                    installApk(type, id, File(localUri).getUriCompat(context))
-                }
-            }
+            calls.remove(downloadId)?.cancel()
+            files.remove(downloadId)?.delete()
         }
     }
 

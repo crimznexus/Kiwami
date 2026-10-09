@@ -35,8 +35,8 @@ android {
         // GeneratedSerializer.typeParametersSerializers().
         minSdk 24
         targetSdk 35
-        versionName "1.0.4"
-        versionCode 100000012
+        versionName "1.0.5"
+        versionCode 100000013
         signingConfig signingConfigs.debug
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

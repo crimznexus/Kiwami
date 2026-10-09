@@ -342,7 +342,10 @@ class PageEnhancer private constructor(
 
         private const val GPU = "GPU (Vulkan)"
         private const val NCNN_CPU = "CPU (ncnn)"
-        private val BACKENDS = listOf(GPU, NCNN_CPU, "NNAPI", "CPU", "CPU (basic)")
+        internal val BACKENDS = listOf(GPU, NCNN_CPU, "NNAPI", "CPU", "CPU (basic)")
+
+        /** For benchmarks: the model on one named backend, skipping the automatic choice. */
+        internal fun createWith(context: Context, backend: String): PageEnhancer? = open(Assets(context), backend)
 
         /** Model files, read from the APK only when a backend needs them. */
         private class Assets(private val context: Context) {

@@ -157,7 +157,7 @@ class DownloadsManager(private val context: Context) {
                 val newBase =
                     DocumentFile.fromTreeUri(context, newUri) ?: throw Exception("New base is null")
                 val folder =
-                    oldBase.findFolder(BASE_LOCATION) ?: throw Exception("Base folder not found")
+                    (oldBase.findFolder(BASE_LOCATION) ?: oldBase.findFolder(LEGACY_LOCATION)) ?: throw Exception("Base folder not found")
                 folder.moveFolderTo(context, newBase, false, BASE_LOCATION, object :
                     FolderCallback() {
                     override fun onFailed(errorCode: ErrorCode) {
@@ -266,7 +266,8 @@ class DownloadsManager(private val context: Context) {
     }
 
     companion object {
-        private const val BASE_LOCATION = "ReDantotsu"
+        private const val BASE_LOCATION = "Kiwami"
+        private const val LEGACY_LOCATION = "ReDantotsu"
         private const val MANGA_SUB_LOCATION = "Manga"
         private const val ANIME_SUB_LOCATION = "Anime"
         private const val NOVEL_SUB_LOCATION = "Novel"
@@ -283,7 +284,7 @@ class DownloadsManager(private val context: Context) {
             val baseDirectory = Uri.parse(PrefManager.getVal<String>(PrefName.DownloadsDir))
             if (baseDirectory == Uri.EMPTY) return null
             var base = DocumentFile.fromTreeUri(context, baseDirectory) ?: return null
-            base = base.findOrCreateFolder(BASE_LOCATION, false) ?: return null
+            base = base.findOrRenameBaseFolder() ?: return null
             return when (type) {
                 MediaType.MANGA -> {
                     base.findOrCreateFolder(MANGA_SUB_LOCATION, false)
@@ -350,7 +351,7 @@ class DownloadsManager(private val context: Context) {
             val baseDirectory = Uri.parse(PrefManager.getVal<String>(PrefName.DownloadsDir))
             if (baseDirectory == Uri.EMPTY) return null
             val base = DocumentFile.fromTreeUri(context, baseDirectory) ?: return null
-            return base.findOrCreateFolder(BASE_LOCATION, false)
+            return base.findOrRenameBaseFolder()
         }
 
         private val lock = Any()
@@ -367,6 +368,19 @@ class DownloadsManager(private val context: Context) {
                     val folder = findFolder(validName)
                     folder ?: createDirectory(validName)
                 }
+            }
+        }
+
+        /**
+         * The downloads folder. A folder left by earlier versions under the old name is renamed in
+         * place (so its downloads are kept); if the rename is refused it keeps being used as is.
+         */
+        private fun DocumentFile.findOrRenameBaseFolder(): DocumentFile? {
+            synchronized(lock) {
+                findFolder(BASE_LOCATION)?.let { return it }
+                val legacy = findFolder(LEGACY_LOCATION)
+                    ?: return findOrCreateFolder(BASE_LOCATION, false)
+                return if (legacy.renameTo(BASE_LOCATION)) findFolder(BASE_LOCATION) ?: legacy else legacy
             }
         }
 

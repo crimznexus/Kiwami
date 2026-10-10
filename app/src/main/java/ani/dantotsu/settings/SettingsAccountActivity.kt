@@ -153,7 +153,7 @@ class SettingsAccountActivity : AppCompatActivity() {
                         PrefManager.setVal(PrefName.CommentsEnabled, if (isChecked) 1 else 2)
                         reload()
                     },
-                    isVisible = Anilist.token != null
+                    isVisible = false // needs Dantotsu's comments server
                 ),
             )
         )

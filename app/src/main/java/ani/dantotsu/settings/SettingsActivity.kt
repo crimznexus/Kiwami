@@ -9,6 +9,7 @@ import android.os.Build.VERSION.CODENAME
 import android.os.Build.VERSION.RELEASE
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.addCallback
@@ -152,7 +153,8 @@ class SettingsActivity : AppCompatActivity() {
                         onClick = {
                             startActivity(Intent(context, SettingsAddonActivity::class.java))
                         },
-                        isActivity = true
+                        isActivity = true,
+                        isVisible = false // the add-ons are published by Dantotsu, not Kiwami
                     ),
                     Settings(
                         type = 1,
@@ -194,22 +196,12 @@ class SettingsActivity : AppCompatActivity() {
                 true
             }
 
-            settingPatreon.setOnClickListener {
-                lifecycleScope.launch {
-                    it.pop()
-                }
-                openLinkInBrowser(getString(R.string.coffee))
-            }
-            lifecycleScope.launch {
-                settingPatreon.pop()
-            }
+            settingPatreon.visibility = View.GONE
 
             loginGithub.setOnClickListener {
                 openLinkInBrowser(getString(R.string.github))
             }
-            loginTelegram.setOnClickListener {
-                openLinkInBrowser(getString(R.string.telegram))
-            }
+            loginTelegram.visibility = View.GONE // the group belongs to ReDantotsu
 
 
             var splashJob: kotlinx.coroutines.Job? = null

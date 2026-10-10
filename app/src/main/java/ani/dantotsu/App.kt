@@ -103,13 +103,8 @@ class App : MultiDexApplication() {
             LogcatLogger.install(AndroidLogcatLogger(LogPriority.VERBOSE))
         }
 
-        if (PrefManager.getVal<Int>(PrefName.CommentsEnabled) == 0) {
-            if (BuildConfig.FLAVOR.contains("fdroid")) {
-                PrefManager.setVal(PrefName.CommentsEnabled, 2)
-            } else {
-                PrefManager.setVal(PrefName.CommentsEnabled, 1)
-            }
-        }
+        // Comments were served by Dantotsu's server, which Kiwami does not use: always off.
+        PrefManager.setVal(PrefName.CommentsEnabled, 2)
 
         CoroutineScope(Dispatchers.IO).launch {
             animeExtensionManager = Injekt.get()

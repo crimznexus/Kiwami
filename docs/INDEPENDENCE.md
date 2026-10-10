@@ -4,8 +4,8 @@ Work through these in order. `[x]` = done, `[ ]` = to do. Items marked **(needs 
 
 ## 1. Own sign-in apps  <- current step
 - [x] **AniList** — client `47328` is yours.
-- [ ] **AniList redirect** — change it to `kiwami://auth` on that page. **(needs you)**
-- [ ] **MAL** — create your own app at myanimelist.net/apiconfig (type: other, redirect `kiwami://mal`) and send me the Client ID. **(needs you)**
+- [ ] **AniList redirect** — after updating to 1.0.6, change it to `kiwami://auth` on that page. **(needs you)**
+- [x] **MAL** — own app, client ID `2b82e1...` (redirect `kiwami://mal`).
 - [x] App accepts both `kiwami://` and `redantotsu://` for AniList and MAL login (done, resolves on the dev build).
 
 ## 2. Remove upstream servers

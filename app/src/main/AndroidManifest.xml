@@ -270,7 +270,7 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask">
-            <intent-filter android:label="Anilist Login for Dantotsu">
+            <intent-filter android:label="Anilist Login for Kiwami">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -279,6 +279,8 @@
                 <data
                     android:host="auth"
                     android:scheme="redantotsu" />
+
+                <data android:scheme="kiwami" />
             </intent-filter>
         </activity>
         <activity
@@ -287,7 +289,7 @@
             android:excludeFromRecents="true"
             android:exported="true"
             android:launchMode="singleTask">
-            <intent-filter android:label="Myanimelist Login for Dantotsu">
+            <intent-filter android:label="Myanimelist Login for Kiwami">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -296,6 +298,8 @@
                 <data
                     android:host="mal"
                     android:scheme="redantotsu" />
+
+                <data android:scheme="kiwami" />
             </intent-filter>
         </activity>
         <!-- Only ever started with an explicit Intent from the source adapters, so it

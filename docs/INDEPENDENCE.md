@@ -3,10 +3,10 @@
 Work through these in order. `[x]` = done, `[ ]` = to do. Items marked **(needs you)** need an account, key or decision only you can supply.
 
 ## 1. Own sign-in apps  <- current step
-- [ ] **AniList** — confirm client `47328` is registered under your own AniList account (anilist.co/settings/developer). **(needs you)**
+- [x] **AniList** — client `47328` is yours.
 - [ ] **AniList redirect** — change it to `kiwami://auth` on that page. **(needs you)**
 - [ ] **MAL** — create your own app at myanimelist.net/apiconfig (type: other, redirect `kiwami://mal`) and send me the Client ID. **(needs you)**
-- [ ] Switch the app to the `kiwami://` scheme (manifest, MAL client ID) and test both logins.
+- [x] App accepts both `kiwami://` and `redantotsu://` for AniList and MAL login (done, resolves on the dev build).
 
 ## 2. Remove upstream servers
 - [ ] Comments feature (`api.dantotsu.app`) — remove, or point at your own server.

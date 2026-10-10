@@ -248,7 +248,7 @@ object Anilist {
     fun loginIntent(context: Context) {
         // Kiwami's own AniList client. Implicit grant (response_type=token) with no
         // redirect_uri parameter, so AniList sends the token to whatever redirect URL is
-        // registered against this ID — it must be exactly `redantotsu://auth` to match the
+        // registered against this ID — it is `kiwami://auth` (the old `redantotsu://auth` is still accepted) to match the
         // intent filter in AndroidManifest.xml. No client secret is involved.
         val clientID = 47328
         try {
